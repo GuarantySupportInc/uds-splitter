@@ -5,3 +5,20 @@ body {
   max-width: 38rem;
   padding: 2rem;
 }
+
+h1 {
+  text-align: center;
+  margin: auto;
+}
+
+p {
+  text-align: center;
+}
+
+footer {
+  margin-top: 2rem;
+  text-align: center;
+  margin: auto;
+  font-size: x-small;
+  max-width: 28rem;
+}
