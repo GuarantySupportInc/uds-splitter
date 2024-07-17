@@ -6,23 +6,85 @@
     <link rel="stylesheet" href="index.css" />
   </head>
   <body>
-    <h1>
-      UDS Splitter
-    </h1>
-    <p>
-      This utility is designed to accept a UDS 2.0-compliant text file and modify its size by splitting it into more consumable pieces before importing into a Claim System
-    </p>
-    <button>Choose a file</button>
+    <div id="page-container">
+      <div id="content-wrap">
+        <div class="title-container">
+          <img src="images/gsi_logo.png" class="logo">
+          <h1>
+            UDS Splitter
+          </h1>
+        </div>
+        <p>
+          This utility is designed to accept a UDS 2.0-compliant text file and modify its size by splitting it into more consumable pieces before importing into a Claim System
+        </p>
 
-    <h3>Settings</h3>
-    <span>Lines per File:</span>
-    <span>Output Folder</span>
-    <span>Open Folder on Complete</span>
+        <button id="choose-file">Choose a file</button>
+        <div id="file-path"></div>
+        
+        <form id="submission-form">
+          <div class="settings">
+            <h3>Settings</h3>
+            <div class="setting-item">
+                <label for="lines-per-file">Lines per File:</label>
+                <input type="text" id="lines-per-file" name="lines-per-file">
+            </div>
+            <div class="setting-item">
+                <label for="output-folder">Output Folder:</label>
+                <input type="text" id="output-folder" name="output-folder">
+            </div>
+            <div class="setting-item">
+                <label for="open-folder">Open Folder on Complete:</label>
+                <input type="checkbox" id="open-folder" name="open-folder">
+            </div>
+          </div>
+          
+          <div class="submit-container">
+            <button type="submit">Process File</button>
+          </div>
+        </form>
+      </div>
 
-    <button>Process File</button>
+      <footer>
+        This product is owned by Guaranty Support Inc. For services please visit our website at <a href="guarantysupportinc.com">guarantysupportinc.com</a>. For support questions, please contact support@guarantysupportinc.com.
+      </footer>
+    </div>
 
-    <footer>
-      This product is owned by Guaranty Support Inc. For services please visit our website at <a href="guarantysupportinc.com">guarantysupportinc.com</a>. For support questions, please contact support@guarantysupportinc.com.
-    </footer>
+    <script>
+      const form = document.getElementById('submission-form');
+      let selectedFilePath = null;
+      form.addEventListener('submit', (event) => {
+          event.preventDefault(); // Prevent default form submission
+          const formData = new FormData(form);
+          const data = {};
+          formData.forEach((value, key) => {
+              data[key] = value;
+          });
+
+          if (selectedFilePath) {
+            data.filePath = selectedFilePath;
+          }
+
+          window.electron.send('submission-form', data);
+
+          window.electron.receive('form-submitted', (message) => {
+              console.log(message);
+          });
+      });
+
+      document.getElementById('choose-file').addEventListener('click', () => {
+            window.electron.send('open-file-dialog');
+        });
+
+      window.electron.receive('selected-file', (filePath) => {
+        if (filePath === 'File selection was canceled.') {
+            document.getElementById('file-path').innerText = 'No file selected';
+            selectedFilePath = null;
+        } else {
+            document.getElementById('file-path').innerText = `Selected file: ${filePath}`;
+            selectedFilePath = filePath;
+        }
+      });
+    </script>
+  
   </body>
 </html>

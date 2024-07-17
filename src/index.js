@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('node:path');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -9,8 +9,8 @@ if (require('electron-squirrel-startup')) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1000,
+    height: 700,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -49,3 +49,42 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+ipcMain.on('submission-form', (event, formData) => {
+  console.log('Form data received:', formData);
+  let linesPerFile = formData['lines-per-file'];
+  let outputDir = formData['output-folder'];
+  if (formData.filePath) {
+    console.log('File path received:', formData.filePath);
+
+    const fs = require('fs');
+    fs.readFile(formData.filePath, 'utf-8', (err, data) => {
+      if (err) {
+        console.error('Error reading file:', err);
+        event.sender.send('form-submitted', 'Error processing file.');
+      } 
+      else {
+        console.log('File content:', data);
+        event.sender.send('form-submitted', 'Form data and file processed successfully!');
+      }
+    });
+  } 
+  else {
+    event.sender.send('form-submitted', 'Form data processed successfully without file.');
+  }
+});
+
+
+ipcMain.on('open-file-dialog', (event) => {
+  const result = dialog.showOpenDialogSync({
+      properties: ['openFile'],
+      filters: [
+        { name: 'Text Files', extensions: ['txt', 'text'] },
+      ],
+  });
+
+  if (result && result.length > 0) {
+      event.sender.send('selected-file', result[0]);
+  } else {
+      event.sender.send('selected-file', 'File selection was canceled.');
+  }
+});

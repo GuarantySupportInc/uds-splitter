@@ -6,19 +6,71 @@ body {
   padding: 2rem;
 }
 
-h1 {
-  text-align: center;
-  margin: auto;
-}
 
 p {
   text-align: center;
 }
 
+#page-container {
+  position: relative;
+  min-height: 100vh;
+}
+
+#content-wrap {
+  padding-bottom: 2.5rem;    /* Footer height */
+}
+
+
 footer {
-  margin-top: 2rem;
   text-align: center;
   margin: auto;
   font-size: x-small;
   max-width: 28rem;
+  position: absolute;
+  bottom: 0;
+}
+
+.title-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.title {
+  flex: 1; /* takes the remaining space to center thing2 */
+  text-align: center;
+}
+
+.logo {
+  max-width: 20%;
+  height: auto;
+  flex: 0 0 auto; /* keeps thing1 aligned to the left */
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.setting-item label{
+  margin-left: 15px;
+}
+
+.setting-item input{
+  margin-right: 300px;
+  width: 25%;
+}
+
+#lines-per-file{
+  width: 10%;
+}
+
+.submit-container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0;
 }
