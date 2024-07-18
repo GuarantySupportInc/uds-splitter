@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Split Progress</title>
+  <style>
+    #progress-container {
+      width: 100%;
+      background-color: #f3f3f3;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+
+    #progress-bar {
+      width: 0%;
+      height: 30px;
+      background-color: #4caf50;
+    }
+
+    .cancel-button-container {
+      margin-top: 10px;
+      text-align: center;
+    }
+
+  </style>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <h2>Processing File...</h2>
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+  </div>
+  <p id="progress-text"></p>
+  <div class="cancel-button-container">
+    <button id="cancel-button">Cancel</button>
+  </div>
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    ipcRenderer.on('progress-update', (event, progress) => {
+      const progressBar = document.getElementById('progress-bar');
+      const progressText = document.getElementById('progress-text');
+      progressBar.style.width = progress + '%';
+      progressText.innerText = progress + '%';
+    });
+
+    ipcRenderer.on('progress-done', (event, message) => {
+      alert(message);
+      window.close();
+    });
+  </script>
+</body>
+</html>
