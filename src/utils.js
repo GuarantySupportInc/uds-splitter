@@ -1,9 +1,8 @@
-const path = require('path');
 
-function createNewTrailer(chunk, filePath, trailer) {
-  const fileName = path.basename(filePath);
+function createNewTrailer(chunk, fileName, trailer) {
   const recordType = fileName[5];
   let totalAmount = 0;
+  let newTrailer;
 
   switch (recordType) {
     case 'A':
@@ -15,20 +14,20 @@ function createNewTrailer(chunk, filePath, trailer) {
         const unearnedPremiumAmount = convertUDSCurrencyToFloat(chunk[i].substring(284, 294));
         totalAmount += unearnedPremiumAmount;
       }
-      const newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
+      newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
       break;
     case 'F':
       //has been validated that it is working as expected
       const chunkLength = chunk.length;
       const newTrailerVal = chunkLength.toString().padStart(9, '0');
-      const newTrailer = trailer.substring(0,64) + newTrailerVal + trailer.substring(73);
+      newTrailer = trailer.substring(0,64) + newTrailerVal + trailer.substring(73);
       break;
     case 'G':
       for (let i = 0; i < currentLines.length; i++) {
         checkAmount = convertUDSCurrencyToFloat(currentLines[i].substring(222, 234));
         totalAmount += checkAmount;
       }
-      const newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
+      newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
       break;
     case 'I':
       // Add your logic for type I here
