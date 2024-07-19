@@ -63,7 +63,7 @@ function convertFloatToUDSCurrency(amount){
     // Convert the amount to an integer number of cents
     const amountInCents = Math.round(absoluteAmount * 100);
   
-    // Convert to a string and pad with leading zeros to ensure the length is 12 characters
+    // Convert to a string and pad with leading zeros to ensure the length is 14 characters
     const amountString = amountInCents.toString().padStart(14, '0');
   
     // Append the sign at the end
