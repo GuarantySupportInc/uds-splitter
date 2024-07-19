@@ -65,6 +65,7 @@
       //form submission
       const form = document.getElementById('submission-form');
       let selectedFilePath = null;
+      let selectedDirectoryPath = null;
       form.addEventListener('submit', (event) => {
         event.preventDefault(); // Prevent default form submission
         const formData = new FormData(form);
@@ -75,6 +76,12 @@
 
         if (selectedFilePath) {
           data.filePath = selectedFilePath;
+        }
+
+        //TODO:this is where output is determined... should default to folder path of input file if not selected
+        // could get the inner.html instead of assigning the var in the separate event
+        if (selectedDirectoryPath) {
+          data.outputDir = selectedDirectoryPath;
         }
 
         window.electron.send('submission-form', data);
@@ -108,6 +115,7 @@
           document.getElementById('output-directory-path').innerText = 'No directory selected';
         } else {
           document.getElementById('output-directory-path').innerText = directoryPath;
+          selectedDirectoryPath = directoryPath;
         }
       });
 
