@@ -15,7 +15,7 @@ function createNewTrailer(chunk, filePath, trailer) {
         const unearnedPremiumAmount = convertUDSCurrencyToFloat(chunk[i].substring(284, 294));
         totalAmount += unearnedPremiumAmount;
       }
-      const newTrailer = trailer.substring(0, 64) + numberOfRecords.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
+      const newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
       break;
     case 'F':
       //has been validated that it is working as expected
@@ -28,7 +28,7 @@ function createNewTrailer(chunk, filePath, trailer) {
         checkAmount = convertUDSCurrencyToFloat(currentLines[i].substring(222, 234));
         totalAmount += checkAmount;
       }
-      const newTrailer = trailer.substring(0, 64) + numberOfRecords.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
+      const newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
       break;
     case 'I':
       // Add your logic for type I here
