@@ -1,8 +1,7 @@
-const path = require('path');
 
-function createNewTrailer(chunk, filePath, trailer) {
-  const fileName = path.basename(filePath);
+function createNewTrailer(chunk, fileName, trailer) {
   const recordType = fileName[5];
+  let newTrailer;
 
   switch (recordType) {
     case 'A':
@@ -15,7 +14,7 @@ function createNewTrailer(chunk, filePath, trailer) {
       //has been validated that it is working as expected
       const chunkLength = chunk.length;
       const newTrailerVal = chunkLength.toString().padStart(9, '0');
-      const newTrailer = trailer.substring(0,64) + newTrailerVal + trailer.substring(73);
+      newTrailer = trailer.substring(0,64) + newTrailerVal + trailer.substring(73);
       break;
     case 'G':
       // Add your logic for type G here

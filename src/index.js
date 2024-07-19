@@ -60,6 +60,8 @@ app.on('window-all-closed', () => {
 ipcMain.on('submission-form', (event, formData) => {
   console.log('Form data received:', formData);
   const filePath = formData.filePath;
+  const fileName = path.basename(filePath);
+  const { name } = path.parse(filePath);
   const linesPerFile = parseInt(formData['lines-per-file']);
   const outputDir = formData.outputDir;
   if (filePath) {
@@ -93,10 +95,10 @@ ipcMain.on('submission-form', (event, formData) => {
         for (let i = 0; i < numberOfLinesInFile; i += linesPerFile) {
           const chunk = lines.slice(i, i + linesPerFile);
           // maybe put functions here to process the chunk for changes w header/trailer
-          const newTrailer = createNewTrailer(chunk, filePath, trailer);
+          const newTrailer = createNewTrailer(chunk, fileName, trailer);
 
           const fileContent = [header, ...chunk, newTrailer].join('\n');
-          const newFileName = `${outputDir}/file-${fileIndex}.txt`;
+          const newFileName = `${outputDir}/${name}-${fileIndex}.txt`;
           fs.writeFile(newFileName, fileContent, (writeErr) => {
             if (writeErr) {
               console.error('Error writing file:', writeErr);
