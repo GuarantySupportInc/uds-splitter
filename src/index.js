@@ -1,5 +1,8 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
-const path = require('node:path');
+const createNewTrailer = require('./utils');
+
+const { app, ipcMain, BrowserWindow, dialog } = require('electron');
+const path = require('path');
+const fs = require('fs');
 
 let mainWindow;
 
@@ -56,10 +59,11 @@ app.on('window-all-closed', () => {
 //main function on submission
 ipcMain.on('submission-form', (event, formData) => {
   console.log('Form data received:', formData);
-  let linesPerFile = formData['lines-per-file'];
-  let outputDir = formData['output-folder'];
-  if (formData.filePath) {
-    console.log('File path received:', formData.filePath);
+  const filePath = formData.filePath;
+  const linesPerFile = parseInt(formData['lines-per-file']);
+  const outputDir = formData.outputDir;
+  if (filePath) {
+    console.log('File path received:', filePath);
     const progressWindow = new BrowserWindow({
       width: 400,
       height: 250,
@@ -72,7 +76,6 @@ ipcMain.on('submission-form', (event, formData) => {
     });
 
     progressWindow.loadFile(path.join(__dirname, 'progress.html'));
-    const fs = require('fs');
     fs.readFile(formData.filePath, 'utf-8', (err, data) => {
       if (err) {
         console.error('Error reading file:', err);
@@ -80,11 +83,34 @@ ipcMain.on('submission-form', (event, formData) => {
       } 
       else {
         const lines = data.split('\n');
+
+        const header = lines.shift();
+        let trailer = lines.pop();
         const numberOfLinesInFile = lines.length;
+        
+        
+        let fileIndex = 1;
+        for (let i = 0; i < numberOfLinesInFile; i += linesPerFile) {
+          const chunk = lines.slice(i, i + linesPerFile);
+          // maybe put functions here to process the chunk for changes w header/trailer
+          const newTrailer = createNewTrailer(chunk, filePath, trailer);
 
-
-        // progressWindow.webContents.send('progress-update', progress); needs to be within a for loop of some sort.. needs to know total lines ahead of time
+          const fileContent = [header, ...chunk, newTrailer].join('\n');
+          const newFileName = `${outputDir}/file-${fileIndex}.txt`;
+          fs.writeFile(newFileName, fileContent, (writeErr) => {
+            if (writeErr) {
+              console.error('Error writing file:', writeErr);
+            } else {
+              console.log(`File ${newFileName} written successfully.`);
+            }
+          });
+    
+          fileIndex++;
+          let progress = Math.round(((i + linesPerFile) / numberOfLinesInFile) * 100);  //progress is kinda difficult to calc with this method since we're not using two loops.. this is basically just saying when a file is done.. maybe can keep track of chunk len outside the loop
+          progressWindow.webContents.send('progress-update', progress);
+        }
         event.sender.send('form-submitted', 'Form data and file processed successfully!');
+        progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');
       }
     });
     // progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');  #when done
