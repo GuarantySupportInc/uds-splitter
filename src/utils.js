@@ -9,7 +9,6 @@ function createNewTrailer(chunk, fileName, trailer) {
     // Add your logic for type A here
     break;
     case 'B':
-      // Add your logic for type B here
       for (let i = 0; i < chunk.length; i++) {
         const unearnedPremiumAmount = convertUDSCurrencyToFloat(chunk[i].substring(284, 294));
         totalAmount += unearnedPremiumAmount;
