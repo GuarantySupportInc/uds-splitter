@@ -1,86 +1,76 @@
-const fs = require('fs');
+const path = require('path');
 
+function createNewTrailer(chunk, filePath, trailer) {
+  const fileName = path.basename(filePath);
+  const recordType = fileName[5];
+  let totalAmount = 0;
 
-function split_records(filePath, linesPerFile, startingBatchNumber, header, trailer, rows, recordType){
-    console.log('Handling BRecord');
-  
-    //iterate through rows and create new files
-    let batchNumber = startingBatchNumber;
-    let currentLines = [];
-    let currentLineCount = 0;
-    for (let i = 0; i < rows.length; i++) {
-      currentLines.push(rows[i]);
-      currentLineCount++;
-      if ((currentLineCount == linesPerFile) || (i == rows.length - 1)) {
-        let newFilename = create_filename(filePath, batchNumber);
-        let newHeader = create_header(header, batchNumber);
-        let newTrailer = create_trailer(trailer, recordType, currentLines);
-        let newFileContents = newHeader + '\n' + currentLines.join('\n') + '\n' + newTrailer;
-        fs.writeFileSync(newFilename, newFileContents);
-        batchNumber++;
-        currentLines = [];
-        currentLineCount = 0;
+  switch (recordType) {
+    case 'A':
+    // Add your logic for type A here
+    break;
+    case 'B':
+      // Add your logic for type B here
+      for (let i = 0; i < chunk.length; i++) {
+        const unearnedPremiumAmount = convertUDSCurrencyToFloat(chunk[i].substring(284, 294));
+        totalAmount += unearnedPremiumAmount;
       }
-    }
-  }
-  
-  function create_filename(filePath, batchNumber) {
-    let filename = filePath.split('\\').pop();
-    return filename.substring(0, 14) + batchNumber.toString().padStart(3, '0') + filename.substring(17);
-  }
-  
-  function create_header(header, batchNumber) {
-    return header.substring(0, 34) + batchNumber.toString().padStart(3, '0') + header.substring(37);
-  }
-  
-  function create_trailer(trailer, recordType, currentLines){
-    let totalAmount = 0;
-    let numberOfRecords = currentLines.length;
-    for (let i = 0; i < currentLines.length; i++) {
-      switch (recordType) {
-        case 'B':
-          let unearnedPremiumAmount = convertUDSCurrencyToFloat(currentLines[i].substring(284, 294));
-          totalAmount += unearnedPremiumAmount;
-          break;
-        case 'G':
-          checkAmount = convertUDSCurrencyToFloat(currentLines[i].substring(222, 234));
-          totalAmount += checkAmount;
-          break;
-        default:
-          console.log(`Unknown record type: ${recordType}`);
-          break;
+      const newTrailer = trailer.substring(0, 64) + numberOfRecords.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
+      break;
+    case 'F':
+      //has been validated that it is working as expected
+      const chunkLength = chunk.length;
+      const newTrailerVal = chunkLength.toString().padStart(9, '0');
+      const newTrailer = trailer.substring(0,64) + newTrailerVal + trailer.substring(73);
+      break;
+    case 'G':
+      for (let i = 0; i < currentLines.length; i++) {
+        checkAmount = convertUDSCurrencyToFloat(currentLines[i].substring(222, 234));
+        totalAmount += checkAmount;
       }
-    }
-    return trailer.substring(0, 64) + numberOfRecords.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount);
+      const newTrailer = trailer.substring(0, 64) + numberOfRecords.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
+      break;
+    case 'I':
+      // Add your logic for type I here
+      break;
+    default:
+      console.log('Invalid Record Type');
+      break;
   }
+
+    return newTrailer;
+}
+
+function convertUDSCurrencyToFloat(amountString) {
+  // Extract the sign
+  const sign = amountString.slice(-1);
   
-  function convertUDSCurrencyToFloat(amountString) {
-    // Extract the sign
-    const sign = amountString.slice(-1);
-    
-    // Extract the numeric part and convert to number
-    const numericPart = amountString.slice(0, -1);
-    
-    // Convert to float with two decimal places
-    const amount = parseFloat(numericPart) / 100;
-    
-    // Adjust sign
-    const signedAmount = sign === '-' ? -amount : amount;
-    
-    return signedAmount;
-  }
+  // Extract the numeric part and convert to number
+  const numericPart = amountString.slice(0, -1);
   
-  function convertFloatToUDSCurrency(amount){
-      // Determine the sign and remove it from the amount
-      const sign = amount < 0 ? '-' : '+';
-      const absoluteAmount = Math.abs(amount);
-    
-      // Convert the amount to an integer number of cents
-      const amountInCents = Math.round(absoluteAmount * 100);
-    
-      // Convert to a string and pad with leading zeros to ensure the length is 12 characters
-      const amountString = amountInCents.toString().padStart(14, '0');
-    
-      // Append the sign at the end
-      return amountString + sign;
-  }
+  // Convert to float with two decimal places
+  const amount = parseFloat(numericPart) / 100;
+  
+  // Adjust sign
+  const signedAmount = sign === '-' ? -amount : amount;
+  
+  return signedAmount;
+}
+
+function convertFloatToUDSCurrency(amount){
+    // Determine the sign and remove it from the amount
+    const sign = amount < 0 ? '-' : '+';
+    const absoluteAmount = Math.abs(amount);
+  
+    // Convert the amount to an integer number of cents
+    const amountInCents = Math.round(absoluteAmount * 100);
+  
+    // Convert to a string and pad with leading zeros to ensure the length is 12 characters
+    const amountString = amountInCents.toString().padStart(14, '0');
+  
+    // Append the sign at the end
+    return amountString + sign;
+}
+  
+module.exports = createNewTrailer;
+
