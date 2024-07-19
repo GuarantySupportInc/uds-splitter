@@ -72,4 +72,3 @@ function convertFloatToUDSCurrency(amount){
 }
   
 module.exports = createNewTrailer;
-
