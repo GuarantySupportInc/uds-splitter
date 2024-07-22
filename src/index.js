@@ -74,6 +74,7 @@ ipcMain.on('submission-form', (event, formData) => {
       webPreferences: {
         contextIsolation: true,
         enableRemoteModule: false,
+        preload: path.join(__dirname, 'preload.js'),
       },
     });
 
@@ -97,7 +98,7 @@ ipcMain.on('submission-form', (event, formData) => {
           // maybe put functions here to process the chunk for changes w header/trailer
           const newTrailer = createNewTrailer(chunk, fileName, trailer);
 
-          const fileContent = [header, ...chunk, newTrailer].join('\n');
+          const fileContent = [header, ...chunk, newTrailer].join('\n') + '\n';
           const newFileName = `${outputDir}/${name}-${fileIndex}.txt`;
           fs.writeFile(newFileName, fileContent, (writeErr) => {
             if (writeErr) {
@@ -110,6 +111,7 @@ ipcMain.on('submission-form', (event, formData) => {
           fileIndex++;
           let progress = Math.round(((i + linesPerFile) / numberOfLinesInFile) * 100);  //progress is kinda difficult to calc with this method since we're not using two loops.. this is basically just saying when a file is done.. maybe can keep track of chunk len outside the loop
           progressWindow.webContents.send('progress-update', progress);
+          console.log(`Progress before: ${progress}`);
         }
         event.sender.send('form-submitted', 'Form data and file processed successfully!');
         progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');

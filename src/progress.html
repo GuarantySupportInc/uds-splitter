@@ -39,7 +39,7 @@
     const { ipcRenderer } = require('electron');
 
     ipcRenderer.on('progress-update', (event, progress) => {
-      console.log(progress);
+      console.log(`progress after update: ${progress}`);
       const progressBar = document.getElementById('progress-bar');
       const progressText = document.getElementById('progress-text');
       progressBar.style.width = progress + '%';
