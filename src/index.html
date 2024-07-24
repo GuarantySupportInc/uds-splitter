@@ -40,8 +40,8 @@
 
           <form id="submission-form">
             <div>   
-              <label for="lines-per-file">Lines per File:</label>
-              <input type="text" id="lines-per-file" name="lines-per-file">
+              <label for="number-of-files">Number of Files:</label>
+              <input type="text" id="number-of-files" name="number-of-files">
             </div>
             <div>
               <label for="open-folder">Open Folder on Complete:</label>
@@ -67,7 +67,7 @@
       let selectedFilePath = null;
       let selectedDirectoryPath = null;
       form.addEventListener('submit', (event) => {
-        event.preventDefault(); // Prevent default form submission
+        event.preventDefault();
         const formData = new FormData(form);
         const data = {};
         formData.forEach((value, key) => {
@@ -83,12 +83,22 @@
         if (selectedDirectoryPath) {
           data.outputDir = selectedDirectoryPath;
         }
+        else{
+          data.outputDir = selectedFilePath.substring(0, selectedFilePath.lastIndexOf('/'));
+        }
 
-        window.electron.send('submission-form', data);
+        data['open-folder'] = formData.has('open-folder');  //will always put the value in the form and converts to boolean instead of 'on'
 
-        window.electron.receive('form-submitted', (message) => {
-          console.log(message);
-        });
+        //TODO might need to be moved up
+        if (! selectedFilePath || ! data['number-of-files']) {
+          alert('Please fill out all required fields.');
+        }
+        else{
+          window.electron.send('submission-form', data);
+          window.electron.receive('form-submitted', (message) => {
+            console.log(message);
+          });
+        }
       });
 
       //file selection
