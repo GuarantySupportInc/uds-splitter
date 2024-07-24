@@ -1,12 +1,15 @@
 
-function createNewTrailer(chunk, fileName, trailer) {
-  const recordType = fileName[5];
+function createNewTrailer(chunk, recordType, trailer) {
   let totalAmount = 0;
   let newTrailer;
 
   switch (recordType) {
     case 'A':
-    // Add your logic for type A here
+      for (let i = 0; i < chunk.length; i++) {
+        const transAmount = convertUDSCurrencyToFloat(chunk[i].substring(430, 442));  //verified length is 12 and ends on either + or -
+        totalAmount += transAmount;
+      }
+      newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);  //verified old trailer and current trailer line up.. amounts still unverified   
     break;
     case 'B':
       for (let i = 0; i < chunk.length; i++) {
@@ -69,5 +72,92 @@ function convertFloatToUDSCurrency(amount){
     // Append the sign at the end
     return amountString + sign;
 }
-  
-module.exports = createNewTrailer;
+
+function getClaimNumber(line, recordType) {
+  let claimNumber;
+  switch (recordType) {
+    case 'A':
+      claimNumber = line.substring(36, 56).trim();
+      break;
+    case 'B':
+      claimNumber = line.substring(16, 36).trim();
+      break;
+    case 'F':
+      claimNumber = line.substring(10, 40).trim();
+      break;
+    case 'G':
+      claimNumber = line.substring(36, 66).trim();
+      break;
+    case 'I':
+      claimNumber = line.substring(10, 30).trim();
+      break;
+    default:
+      console.log('Invalid Record Type');
+      break;
+  }
+  return claimNumber;
+}
+
+function sortFileByClaim(lines, recordType) {
+  const uniqueClaims = new Set();
+  // Sort the lines by claim number
+  switch (recordType) {
+    case 'A':
+      lines.sort((a, b) => {
+        const claimNumberA = a.substring(36, 56).trim();
+        const claimNumberB = b.substring(36, 56).trim();
+        uniqueClaims.add(claimNumberA);
+        uniqueClaims.add(claimNumberB);
+        return claimNumberA.localeCompare(claimNumberB);
+      });
+      break;
+    case 'B':
+      lines.sort((a, b) => {
+        const claimNumberA = a.substring(16, 36).trim();
+        const claimNumberB = b.substring(16, 36).trim();
+        uniqueClaims.add(claimNumberA);
+        uniqueClaims.add(claimNumberB);
+        return claimNumberA.localeCompare(claimNumberB);
+      });
+      break;
+    case 'F':
+      lines.sort((a, b) => {
+        const claimNumberA = a.substring(10, 40).trim();
+        const claimNumberB = b.substring(10, 40).trim();
+        uniqueClaims.add(claimNumberA);
+        uniqueClaims.add(claimNumberB);
+        return claimNumberA.localeCompare(claimNumberB);
+      });
+      break;
+    case 'G':
+      lines.sort((a, b) => {
+        const claimNumberA = a.substring(36, 66).trim();
+        const claimNumberB = b.substring(36, 66).trim();
+        uniqueClaims.add(claimNumberA);
+        uniqueClaims.add(claimNumberB);
+        return claimNumberA.localeCompare(claimNumberB);
+      });
+      break;
+    case 'I':
+      lines.sort((a, b) => {
+        const claimNumberA = a.substring(10, 30).trim();
+        const claimNumberB = b.substring(10, 30).trim();
+        uniqueClaims.add(claimNumberA);
+        uniqueClaims.add(claimNumberB);
+        return claimNumberA.localeCompare(claimNumberB);
+      });
+      break;
+    default:
+      console.log('Invalid Record Type');
+      break;
+  }
+  return { sortedLines: lines, uniqueClaims: uniqueClaims.size };
+}
+
+module.exports = {
+  createNewTrailer,
+  convertUDSCurrencyToFloat,
+  convertFloatToUDSCurrency,
+  sortFileByClaim,
+  getClaimNumber
+};
