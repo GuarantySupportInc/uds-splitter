@@ -1,8 +1,19 @@
-const { createNewTrailer, sortFileByClaim, getClaimNumber } = require('./utils');
+'use strict';
 
+const { createNewTrailer, sortFileByClaim, getClaimNumber } = require('./utils');
 const { app, ipcMain, BrowserWindow, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+let electron_path;
+if(process.platform === 'win32')
+  electron_path = 'node_modules/.bin/electron.cmd'
+else
+  electron_path = 'node_modules/.bin/electron';
+
+require('electron-reload')(__dirname, {
+  hardResetMethod: 'exit'
+})
 
 let mainWindow;
 
@@ -25,7 +36,7 @@ const createWindow = () => {
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
