@@ -9,11 +9,11 @@ function createNewTrailer(chunk, recordType, trailer) {
         const transAmount = convertUDSCurrencyToFloat(chunk[i].substring(430, 442));  //verified length is 12 and ends on either + or -
         totalAmount += transAmount;
       }
-      newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);  //verified old trailer and current trailer line up.. amounts still unverified   
+      newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);  //verified old trailer and current trailer line up.. both + and - amounts have also been verified to be working correctly  
     break;
     case 'B':
       for (let i = 0; i < chunk.length; i++) {
-        const unearnedPremiumAmount = convertUDSCurrencyToFloat(chunk[i].substring(284, 294));
+        const unearnedPremiumAmount = convertUDSCurrencyToFloat(chunk[i].substring(284, 294));  //correct UDS position
         totalAmount += unearnedPremiumAmount;
       }
       newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
@@ -26,7 +26,7 @@ function createNewTrailer(chunk, recordType, trailer) {
       break;
     case 'G':
       for (let i = 0; i < currentLines.length; i++) {
-        checkAmount = convertUDSCurrencyToFloat(currentLines[i].substring(222, 234));
+        checkAmount = convertUDSCurrencyToFloat(currentLines[i].substring(222, 234)); //correct UDS position
         totalAmount += checkAmount;
       }
       newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
@@ -42,6 +42,7 @@ function createNewTrailer(chunk, recordType, trailer) {
     return newTrailer;
 }
 
+//this function is working as expected based upon the returned A's
 function convertUDSCurrencyToFloat(amountString) {
   // Extract the sign
   const sign = amountString.slice(-1);
@@ -58,6 +59,7 @@ function convertUDSCurrencyToFloat(amountString) {
   return signedAmount;
 }
 
+//this function is working as expected based upon the returned A's
 function convertFloatToUDSCurrency(amount){
     // Determine the sign and remove it from the amount
     const sign = amount < 0 ? '-' : '+';

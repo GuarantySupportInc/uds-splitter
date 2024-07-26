@@ -50,6 +50,10 @@
       alert(message);
       window.close();
     });
+
+    document.getElementById('cancel-button').addEventListener('click', () => {
+      ipcRenderer.send('cancel-processing');
+    });
   </script>
 </body>
 </html>

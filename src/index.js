@@ -65,6 +65,7 @@ ipcMain.on('submission-form', (event, formData) => {
   const { name } = path.parse(filePath);
   const numberOfFiles = parseInt(formData['number-of-files']);
   const outputDir = formData.outputDir;
+  let isProcessingCanceled = false;
   console.log('File path received:', filePath);
   const progressWindow = new BrowserWindow({
     width: 400,
@@ -109,6 +110,9 @@ ipcMain.on('submission-form', (event, formData) => {
       let i = 0;
 
       while (i < sortedLines.length) {
+        if (isProcessingCanceled) {
+          break;
+        }
         let endIndex = Math.min(i + linesPerFile, sortedLines.length);
     
         // Ensure we do not split claims across files
@@ -140,18 +144,17 @@ ipcMain.on('submission-form', (event, formData) => {
         fileIndex++;
         i = endIndex;
       }
-      event.sender.send('form-submitted', 'Form data and file processed successfully!');
-      progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');
+      if (isProcessingCanceled) {
+        event.sender.send('form-submitted', 'Processing was canceled.');
+        progressWindow.close();
+        progressWindow.webContents.send('progress-done', 'Processing was canceled.');
+      } else {
+        event.sender.send('form-submitted', 'Form data and file processed successfully!');
+        progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');
+      }
     }
   });
   // progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');  #when done
-  if (formData['open-folder']) {
-    shell.openPath(outputDir).then(() => {
-      console.log('Folder opened successfully');
-    }).catch((err) => {
-      console.error('Error opening folder:', err);
-    });
-  }
 });
 
 //choose file
@@ -181,4 +184,25 @@ ipcMain.on('open-directory-dialog', (event) => {
   } else {
       event.sender.send('selected-directory', 'canceled');
   }
+});
+
+//choose zip file
+ipcMain.on('open-zip-file-dialog', (event) => {
+  const result = dialog.showOpenDialogSync(mainWindow, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'Zip Files', extensions: ['zip'] },
+      ],
+  });
+
+  if (result && result.length > 0) {
+      event.sender.send('selected-zip-file', result[0]);
+  } else {
+      event.sender.send('selected-zip-file', 'canceled');
+  }
+});
+
+ipcMain.on('cancel-processing', (event) => {
+  isProcessingCanceled = true;
+  console.log('Processing canceled by the user.');
 });
