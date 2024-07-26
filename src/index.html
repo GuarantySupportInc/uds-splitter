@@ -33,6 +33,12 @@
             <span id="file-path"></span>
           </div>
 
+         
+          <div id="choose-zip-container" class="file-select-container" style="display:none">
+            <button id="choose-zip-file">Choose the associated zip</button>
+            <span id="zip-file-path"></span>
+          </div>
+
           <div class="file-select-container">
             <button id="choose-output-directory">Choose the output directory</button>
             <span id="output-directory-path"></span>
@@ -66,6 +72,7 @@
       const form = document.getElementById('submission-form');
       let selectedFilePath = null;
       let selectedDirectoryPath = null;
+      let selectedZipPath = null;
       form.addEventListener('submit', (event) => {
         event.preventDefault();
         const formData = new FormData(form);
@@ -87,11 +94,21 @@
           data.outputDir = selectedFilePath.substring(0, selectedFilePath.lastIndexOf('/'));
         }
 
+        if (selectedZipPath) {
+          data.zipPath = selectedZipPath;
+        }
+
         data['open-folder'] = formData.has('open-folder');  //will always put the value in the form and converts to boolean instead of 'on'
 
         //TODO might need to be moved up
-        if (! selectedFilePath || ! data['number-of-files']) {
-          alert('Please fill out all required fields.');
+        if (! selectedFilePath && ! data['number-of-files']) {
+          alert('Please select a file to split and how many splits you wish to occur.');
+        }
+        else if (! selectedFilePath) {
+          alert('Please select a file to split.');
+        }
+        else if (! data['number-of-files']) {
+          alert('Please select how many splits you wish to occur.');
         }
         else{
           window.electron.send('submission-form', data);
@@ -110,11 +127,22 @@
         if (filePath === 'canceled') {
           document.getElementById('file-path').innerText = 'No file selected';
           selectedFilePath = null;
+          document.getElementById('choose-zip-container').style.display = 'none';
         } else {
           document.getElementById('file-path').innerText = filePath;
           selectedFilePath = filePath;
+          const parts = filePath.split('/');
+          const fileName = parts.pop();
+          const recordType = fileName[5];
+          if (recordType == 'I'){
+            document.getElementById('choose-zip-container').style.display = 'block';
+          }
+          else{
+            document.getElementById('choose-zip-container').style.display = 'none';
+          }
         }
       });
+
 
       //output directory selection
       document.getElementById('choose-output-directory').addEventListener('click', () => {
@@ -123,9 +151,24 @@
       window.electron.receive('selected-directory', (directoryPath) => {
         if (directoryPath === 'canceled') {
           document.getElementById('output-directory-path').innerText = 'No directory selected';
+          selectedDirectoryPath = null;
         } else {
           document.getElementById('output-directory-path').innerText = directoryPath;
           selectedDirectoryPath = directoryPath;
+        }
+      });
+
+      //zip file selection
+      document.getElementById('choose-zip-file').addEventListener('click', () => {
+        window.electron.send('open-zip-file-dialog');
+      });
+      window.electron.receive('selected-zip-file', (filePath) => {
+        if (filePath === 'canceled') {
+          document.getElementById('zip-file-path').innerText = 'No file selected';
+          selectedZipPath = null;
+        } else {
+          document.getElementById('zip-file-path').innerText = filePath;
+          selectedZipPath = filePath;
         }
       });
 
