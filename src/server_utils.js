@@ -35,7 +35,7 @@ function createNewTrailer(chunk, recordType, trailer) {
       // Add your logic for type I here
       break;
     default:
-      console.log('Invalid Record Type');
+      console.debug('Invalid Record Type');
       break;
   }
 
@@ -94,7 +94,7 @@ function getClaimNumber(line, recordType) {
       claimNumber = line.substring(10, 30).trim();
       break;
     default:
-      console.log('Invalid Record Type');
+      console.debug('Invalid Record Type');
       break;
   }
   return claimNumber;
@@ -150,10 +150,29 @@ function sortFileByClaim(lines, recordType) {
       });
       break;
     default:
-      console.log('Invalid Record Type');
+      console.debug('Invalid Record Type');
       break;
   }
   return { sortedLines: lines, uniqueClaims: uniqueClaims.size };
+}
+
+function file_sep(file_name) {
+  let starts_with_volume_letter = /^[A-Za-z]:\\/
+  let starts_with_slash = /^\//
+
+  if(starts_with_volume_letter.test(file_name)) {
+    // WINDOWS
+    return "\\"
+  } else if(starts_with_slash.text(file_name)) {
+    // LINUX/MAC
+    return "/"
+  } else if(file_name.includes('\\')) {
+    return "\\"
+  } else if(file_name.includes("/")) {
+    return "/"
+  } else {
+    throw new Error(`Not sure what file path separator we are using: '${file_name}'`)
+  }
 }
 
 module.exports = {
@@ -161,5 +180,6 @@ module.exports = {
   convertUDSCurrencyToFloat,
   convertFloatToUDSCurrency,
   sortFileByClaim,
-  getClaimNumber
+  getClaimNumber,
+  file_sep
 };
