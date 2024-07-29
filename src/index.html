@@ -29,9 +29,15 @@
         </div>
         <form id="submission-form">
             <div class="form container">
-                <button id="choose-file" type="button" onclick="window.backend.ChooseFileDialog()">Choose a file</button>
+                <button type="button" onclick="window.backend.ChooseUDSFileDialog()">Choose UDS file</button>
                 <span id="chosen-file-friendly"></span>
                 <input type="hidden" id="chosen-file" name="chosen-file">
+            </div>
+
+            <div class="form container" id="zip-section" style="display: none;">
+                <button type="button" onclick="window.backend.ChooseZIPFileDialog()">Choose ZIP file</button>
+                <span id="choose-additional-file-friendly"></span>
+                <input type="hidden" id="choose-additional-file" name="additional-chosen-file">
             </div>
 
             <div class="settings container">
@@ -103,22 +109,37 @@
             if (filePath === 'canceled') {
                 document.getElementById('chosen-file-friendly').innerText = 'No file selected';
                 document.getElementById('chosen-file').value = ""
+
+                // Hide Additional File Section
+                document.getElementById("zip-section").style.display = "none"
+                document.getElementById("zip-section").value = ""
+
             } else {
                 document.getElementById('chosen-file-friendly').innerText = filePath.substring(filePath.lastIndexOf(file_sep(filePath)) + 1);
                 document.getElementById('chosen-file').value = filePath
 
+                // ----------------------------------------------------------
+                // Provide Default Batch Number on file select
+                // ----------------------------------------------------------
                 const uds_file_regex = /(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
                 let groups = filePath.match(uds_file_regex)
 
                 if(!groups) throw new Error(`Selected File ${filePath} does not match UDS file format.`)
 
                 let batch_number = groups[5]
-
+                let record_type = groups[2]
 
                 document.getElementById('starting-batch-number').value = batch_number
 
-                console.debug(`Found batch number ${batch_number}`)
+                // Show Additional File Section
+                if(record_type.toLowerCase() === "i") {
+                    document.getElementById("zip-section").style.display = "initial"
+                } else {
+                    document.getElementById("zip-section").style.display = "none"
+                }
 
+
+                console.debug(`Found UDS match: ${groups}`)
                 console.debug(`Successfully selected ${filePath}`)
             }
         });
@@ -130,6 +151,16 @@
                 document.getElementById('output-directory').value = directoryPath;
             }
         });
+
+        window.backend.OnSelectedZIPFile((filePath) => {
+            if (filePath === 'canceled') {
+                document.getElementById('choose-additional-file-friendly').innerText = 'No file selected';
+                document.getElementById('choose-additional-file').value = ""
+            } else {
+                document.getElementById('choose-additional-file-friendly').innerText = filePath.substring(filePath.lastIndexOf(file_sep(filePath)) + 1);
+                document.getElementById('choose-additional-file').value = filePath
+            }
+        })
     </script>
 
 </div>

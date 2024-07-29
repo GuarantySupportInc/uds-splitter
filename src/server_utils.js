@@ -2,6 +2,9 @@
 
 
 // START OF FILE MUST LOOK LIKE A UDS FILE
+const AdmZip = require('adm-zip');
+const fs = require("node:fs");
+const {createInterface} = require("node:readline");
 const UDS_FILE_REGEX = /^(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
 
 function padDigits(number, digits) {
@@ -214,6 +217,76 @@ function join_path_parts(...args) {
   return args.join(sep)
 }
 
+/**
+ * Given a zip file, generate a smaller zip file for each resulting UDS file path. This may seem strange, but we run the
+ * risk of reading a ZIP file more than once. For big files that should NOT happen, so we are operating under the
+ * assumption that .txt files are cheap and .zip files are expensive which forms the basis of the loop.
+ * @param original_zip_file full path
+ * @param final_uds_file_paths list of full paths
+ */
+async function create_zip_files(original_zip_file, final_uds_file_paths) {
+
+  let zip = new AdmZip(original_zip_file, {})
+
+  let file_map = {
+    //"{file_path}": "{final_uds_file_path}"
+  }
+
+  let zip_map = {
+    //"{final_uds_file_path}": "{resulting_zip}"
+  }
+
+  // Populate file_map
+  for(let path in final_uds_file_paths.values()) {
+    // Set up line-by-line processing
+
+    let file_stream = fs.createReadStream(path)
+    let reader = createInterface({
+      input: file_stream,
+      crlfDelay: Infinity
+    })
+
+    if(!(path in zip_map))
+      zip_map[path] = new AdmZip(path, {})
+
+    for await (const line of reader) {
+      let document_path = line.substring(702, 958).trim() // Assuming perfect UDS
+      let file_name = line.substring(958, 1214).trim()
+
+      let full_path = join_path_parts(document_path, file_name)
+
+      if(!(full_path in file_map)) {
+        file_map[full_path] = new Set([path])
+      } else {
+        file_map[full_path].add(path)
+      }
+    }
+  }
+
+  // Determine where this entry to should go in the resulting uds files
+  zip.getEntries("").forEach((entry) => {
+    // "\\Images\\test\\somefile.txt"
+    let uds_version_of_entry = `\\${trim(entry.entryName, '\\')}`
+
+    if(!(uds_version_of_entry in file_map))
+      throw new Error(`${uds_version_of_entry} is not in an a resulting UDS file. Are you sure the ZIP goes with the UDS file?`)
+
+    console.debug(`Processing ZIP entry: ${entry.entryName}`)
+
+    zip.readFileAsync(entry, (data) => {
+
+      // Basically one Full Path could belong to multiple UDS files, so we store the list of UDS files for each full path
+      // then we get the resulting ZIP for each eventual UDS file. Thus we hope that zip.readFileAsync() is only called
+      // ONCE but the same data is propagated to as many UDS files as we need.
+
+      file_map[uds_version_of_entry].forEach((uds_source_file) => {
+        let resulting_zip = zip_map[uds_source_file]
+        resulting_zip.addFile(entry.entryName, data , entry.comment(), entry.attr())
+      })
+    })
+  })
+}
+
 module.exports = {
   createNewTrailer,
   sortFileByClaim,
@@ -221,5 +294,6 @@ module.exports = {
   UDS_FILE_REGEX,
   swap_batch_number_in_file_name,
   join_path_parts,
-  createNewHeader
+  createNewHeader,
+  create_zip_files
 };

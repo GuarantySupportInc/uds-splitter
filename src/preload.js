@@ -3,8 +3,11 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('backend', {
-    ChooseFileDialog: () => {
-        ipcRenderer.send('open-file-dialog')
+    ChooseUDSFileDialog: () => {
+        ipcRenderer.send('open-uds-file-dialog')
+    },
+    ChooseZIPFileDialog: () => {
+        ipcRenderer.send('open-zip-file-dialog')
     },
     SubmitForm: (data) => {
         ipcRenderer.send('submitted-form', data);
@@ -29,5 +32,8 @@ contextBridge.exposeInMainWorld('backend', {
     },
     CancelProcess: () => {
         ipcRenderer.send('cancel-processing')
+    },
+    OnSelectedZIPFile: (callback) => {
+        ipcRenderer.on('selected-zip-file', (event, response) => callback(response))
     }
 });

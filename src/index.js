@@ -1,6 +1,6 @@
 'use strict';
 
-const { createNewTrailer, sortFileByClaim, getClaimNumber, swap_batch_number_in_file_name, join_path_parts, createNewHeader } = require('./server_utils');
+const { createNewTrailer, sortFileByClaim, getClaimNumber, swap_batch_number_in_file_name, join_path_parts, createNewHeader, create_zip_files } = require('./server_utils');
 const { app, ipcMain, BrowserWindow, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -77,6 +77,7 @@ app.on('window-all-closed', () => {
 ipcMain.on('submitted-form', (event, formData) => {
   console.debug('Form data received:', formData);
   const filePath = formData["chosen-file"];
+  const zip_file_path = formData["additional-chosen-file"]
   const fileName = path.basename(filePath);
   const recordType = fileName[5];
   const file_name = path.parse(filePath).name;
@@ -100,77 +101,85 @@ ipcMain.on('submitted-form', (event, formData) => {
   });
 
   progressWindow.loadFile(path.join(__dirname, 'progress.html'));
-  fs.readFile(formData["chosen-file"], 'utf-8', (err, data) => {
+  fs.readFile(formData["chosen-file"], 'utf-8', async (err, data) => {
     if (err) {
-      console.error('Error reading file:', err);
-      event.sender.send('form-submitted', 'Error processing file.');
-    } 
-    else {
-      const lines = data.split('\n');
+      throw new Error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
+    }
 
-      const header = lines.shift();
-      let trailer = lines.pop();
-      const numberOfLinesInFile = lines.length;
-      const linesPerFile = Math.ceil(numberOfLinesInFile / numberOfFiles);
+    const lines = data.split('\n');
 
-      const result = sortFileByClaim(lines, recordType);
-      const sortedLines = result.sortedLines;
+    const header = lines.shift();
+    let trailer = lines.pop();
+    const numberOfLinesInFile = lines.length;
+    const linesPerFile = Math.ceil(numberOfLinesInFile / numberOfFiles);
 
-      let fileIndex = 1;
-      let i = 0;
+    const result = sortFileByClaim(lines, recordType);
+    const sortedLines = result.sortedLines;
 
-      while (i < sortedLines.length) {
-        if (isProcessingCanceled) {
-          break;
-        }
-        let endIndex = Math.min(i + linesPerFile, sortedLines.length);
-    
-        // Ensure we do not split claims across files
-        if (endIndex < sortedLines.length) {
-          const currentClaim = getClaimNumber(sortedLines[endIndex - 1], recordType);
-          let nextClaim = getClaimNumber(sortedLines[endIndex], recordType);
-    
-          while (currentClaim === nextClaim && endIndex < sortedLines.length) {
-            endIndex++;
-            if (endIndex < sortedLines.length) {
-              nextClaim = getClaimNumber(sortedLines[endIndex], recordType);
-            }
-          }
-        }
+    let fileIndex = 1;
+    let i = 0;
 
-        let new_batch_number = startingBatchNumber + fileIndex - 1 // Starting at 1, so need to move the number left
-        const chunk = sortedLines.slice(i, endIndex);
-        const newTrailer = createNewTrailer(chunk, recordType, new_batch_number, trailer);
-        const newHeader = createNewHeader(chunk, recordType, new_batch_number, header)
-        const fileContent = [newHeader, ...chunk, newTrailer].join('\r\n') + '\r\n';
-        const new_file_name = swap_batch_number_in_file_name(file_name, new_batch_number)
-        const new_file_path = join_path_parts(outputDir, `${new_file_name}-${fileIndex}.txt`)
-        let progress = Math.round(((i + linesPerFile) / numberOfLinesInFile) * 100);  //progress is kinda difficult to calc with this method since we're not using two loops.. this is basically just saying when a file is done.. maybe can keep track of chunk len outside the loop
-        progressWindow.webContents.send('progress-update', progress);
-        fs.writeFile(new_file_path, fileContent, (writeErr) => {
-          if (writeErr) {
-            throw new Error(`There was an error writing to ${new_file_path}: ${writeErr.message}`)
-          } else {
-            console.debug(`File ${new_file_path} written successfully.`);
-          }
-        });
-        fileIndex++;
-        i = endIndex;
-      }
+    let new_uds_files = []
+
+    while (i < sortedLines.length) {
       if (isProcessingCanceled) {
-        event.sender.send('form-submitted', 'Processing was canceled.');
-        progressWindow.close();
-        progressWindow.webContents.send('progress-done', 'Processing was canceled.');
-      } else {
-        event.sender.send('form-submitted', 'Form data and file processed successfully!');
-        progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');
+        break;
       }
+      let endIndex = Math.min(i + linesPerFile, sortedLines.length);
+
+      // Ensure we do not split claims across files
+      if (endIndex < sortedLines.length) {
+        const currentClaim = getClaimNumber(sortedLines[endIndex - 1], recordType);
+        let nextClaim = getClaimNumber(sortedLines[endIndex], recordType);
+
+        while (currentClaim === nextClaim && endIndex < sortedLines.length) {
+          endIndex++;
+          if (endIndex < sortedLines.length) {
+            nextClaim = getClaimNumber(sortedLines[endIndex], recordType);
+          }
+        }
+      }
+
+      let new_batch_number = parseInt(startingBatchNumber) + fileIndex - 1 // Starting at 1, so need to move the number left
+      const chunk = sortedLines.slice(i, endIndex);
+      const newTrailer = createNewTrailer(chunk, recordType, new_batch_number, trailer);
+      const newHeader = createNewHeader(chunk, recordType, new_batch_number, header)
+      const fileContent = [newHeader, ...chunk, newTrailer].join('\r\n') + '\r\n';
+      const new_file_name = swap_batch_number_in_file_name(file_name, new_batch_number)
+      const new_file_path = join_path_parts(outputDir, `${new_file_name}-${fileIndex}.txt`)
+      let progress = Math.round(((i + linesPerFile) / numberOfLinesInFile) * 100);  //progress is kinda difficult to calc with this method since we're not using two loops.. this is basically just saying when a file is done.. maybe can keep track of chunk len outside the loop
+      progressWindow.webContents.send('progress-update', progress);
+      fs.writeFile(new_file_path, fileContent, (writeErr) => {
+        if (writeErr) {
+          throw new Error(`There was an error writing to ${new_file_path}: ${writeErr.message}`)
+        } else {
+          console.debug(`File ${new_file_path} written successfully.`);
+        }
+      });
+
+      new_uds_files.push(new_file_path)
+
+      fileIndex++;
+      i = endIndex;
+    }
+
+    if (recordType.toLowerCase() === 'i') {
+      await create_zip_files(zip_file_path, new_uds_files)
+    }
+
+    if (isProcessingCanceled) {
+      event.sender.send('form-submitted', 'Processing was canceled.');
+      progressWindow.close();
+      progressWindow.webContents.send('progress-done', 'Processing was canceled.');
+    } else {
+      event.sender.send('form-submitted', 'Form data and file processed successfully!');
+      progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');
     }
   });
   // progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');  #when done
 });
 
-ipcMain.on('open-file-dialog', (event) => {
+ipcMain.on('open-uds-file-dialog', (event) => {
   const result = dialog.showOpenDialogSync(mainWindow,{
       properties: ['openFile'],
       filters: [
