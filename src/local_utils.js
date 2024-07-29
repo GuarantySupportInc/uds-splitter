@@ -38,3 +38,7 @@ function get_directory_from_path(file_path) {
 function is_null_or_empty(value) {
     return value == null || String(value).trim() === ""
 }
+
+function padDigits(number, digits) {
+    return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
+}

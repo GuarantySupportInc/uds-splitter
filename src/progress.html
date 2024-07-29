@@ -36,9 +36,7 @@
     <button id="cancel-button">Cancel</button>
   </div>
   <script>
-    const { ipcRenderer } = require('electron');
-
-    ipcRenderer.on('progress-update', (event, progress) => {
+    window.backend.OnProgressUpdate((progress) => {
       console.debug(`progress after update: ${progress}`);
       const progressBar = document.getElementById('progress-bar');
       const progressText = document.getElementById('progress-text');
@@ -46,13 +44,13 @@
       progressText.innerText = progress + '%';
     });
 
-    ipcRenderer.on('progress-done', (event, message) => {
-      alert(message);
+    window.backend.OnProgressCompleted((message) => {
       window.close();
     });
 
     document.getElementById('cancel-button').addEventListener('click', () => {
-      ipcRenderer.send('cancel-processing');
+      window.backend.CancelProcess();
+      window.close();
     });
   </script>
 </body>

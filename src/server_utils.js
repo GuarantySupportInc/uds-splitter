@@ -1,8 +1,18 @@
+'use strict';
 
-function createNewTrailer(chunk, recordType, trailer) {
+
+// START OF FILE MUST LOOK LIKE A UDS FILE
+const UDS_FILE_REGEX = /^(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
+
+function padDigits(number, digits) {
+  return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
+}
+
+function createNewTrailer(chunk, recordType, new_batch_number, trailer) {
   let totalAmount = 0;
   let newTrailer;
 
+  // Record Specific Fixes
   switch (recordType) {
     case 'A':
       for (let i = 0; i < chunk.length; i++) {
@@ -25,8 +35,8 @@ function createNewTrailer(chunk, recordType, trailer) {
       newTrailer = trailer.substring(0,64) + newTrailerVal + trailer.substring(73);
       break;
     case 'G':
-      for (let i = 0; i < currentLines.length; i++) {
-        checkAmount = convertUDSCurrencyToFloat(currentLines[i].substring(222, 234)); //correct UDS position
+      for (let i = 0; i < chunk.length; i++) {
+        const checkAmount = convertUDSCurrencyToFloat(chunk[i].substring(222, 234)); //correct UDS position
         totalAmount += checkAmount;
       }
       newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
@@ -35,11 +45,20 @@ function createNewTrailer(chunk, recordType, trailer) {
       // Add your logic for type I here
       break;
     default:
-      console.debug('Invalid Record Type');
-      break;
+      throw new Error(`UDS filename is using an invalid record type: ${recordType}`)
   }
 
-    return newTrailer;
+  // Fix Batch Number
+  // Header and Trailer have same Batch Number positions.
+  newTrailer = trailer.substring(0, 34) + padDigits(new_batch_number,3) + trailer.substring(37)
+
+  return newTrailer;
+}
+
+function createNewHeader(chunk, recordType, new_batch_number, header) {
+  // Fix Batch Number
+  // Header and Trailer have same Batch Number positions.
+  return header.substring(0, 34) + padDigits(new_batch_number, 3) + header.substring(37)
 }
 
 //this function is working as expected based upon the returned A's
@@ -54,9 +73,7 @@ function convertUDSCurrencyToFloat(amountString) {
   const amount = parseFloat(numericPart) / 100;
   
   // Adjust sign
-  const signedAmount = sign === '-' ? -amount : amount;
-  
-  return signedAmount;
+  return sign === '-' ? -amount : amount;
 }
 
 //this function is working as expected based upon the returned A's
@@ -94,8 +111,7 @@ function getClaimNumber(line, recordType) {
       claimNumber = line.substring(10, 30).trim();
       break;
     default:
-      console.debug('Invalid Record Type');
-      break;
+      throw new Error(`UDS filename is using an invalid record type: ${recordType}`);
   }
   return claimNumber;
 }
@@ -150,8 +166,7 @@ function sortFileByClaim(lines, recordType) {
       });
       break;
     default:
-      console.debug('Invalid Record Type');
-      break;
+      throw new Error(`UDS filename is using an invalid record type: ${recordType}`);
   }
   return { sortedLines: lines, uniqueClaims: uniqueClaims.size };
 }
@@ -175,11 +190,36 @@ function file_sep(file_name) {
   }
 }
 
+function swap_batch_number_in_file_name(uds_file_name, new_batch_number) {
+  // START OF uds_file_name MUST LOOK LIKE A UDS FILE
+  if(!uds_file_name.match(UDS_FILE_REGEX))
+    throw new Error(`File name does not appear to match a UDS file name: ${uds_file_name}`);
+
+  // "55555IIN01IN99 | 001 | 20240717.txt"
+  return uds_file_name.substring(0, 14) + padDigits(new_batch_number, 3) + uds_file_name.substring(17)
+}
+
+function trim(string, character) {
+  const end_of_string_regex = new RegExp(character + "*$")
+  const start_of_string_regex = new RegExp("^" + character + "*")
+
+  return string.replace(start_of_string_regex, '').replace(end_of_string_regex, '');
+}
+
+function join_path_parts(...args) {
+  const sep = file_sep(args[0])
+
+  args.forEach(arg => trim(arg, sep))
+
+  return args.join(sep)
+}
+
 module.exports = {
   createNewTrailer,
-  convertUDSCurrencyToFloat,
-  convertFloatToUDSCurrency,
   sortFileByClaim,
   getClaimNumber,
-  file_sep
+  UDS_FILE_REGEX,
+  swap_batch_number_in_file_name,
+  join_path_parts,
+  createNewHeader
 };

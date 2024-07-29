@@ -49,6 +49,10 @@
                     <input type="number" id="number-of-files" name="number-of-files" value="3" min="2" required>
                 </div>
                 <div>
+                    <label for="starting-batch-number">Starting Batch Number</label>
+                    <input type="number" id="starting-batch-number" name="starting-batch-number" min="1" max="999" onchange="format_batch_number()" required>
+                </div>
+                <div>
                     <label for="open-folder">Open Folder on Complete:</label>
                     <input type="checkbox" id="open-folder" name="open-folder" checked required>
                 </div>
@@ -89,6 +93,11 @@
                 console.debug(response);
             })
         }
+        
+        function format_batch_number() {
+            const element = document.getElementById('starting-batch-number')
+            element.value = padDigits(element.value, 3)
+        }
 
         window.backend.OnSelectedFile((filePath) => {
             if (filePath === 'canceled') {
@@ -97,6 +106,19 @@
             } else {
                 document.getElementById('chosen-file-friendly').innerText = filePath.substring(filePath.lastIndexOf(file_sep(filePath)) + 1);
                 document.getElementById('chosen-file').value = filePath
+
+                const uds_file_regex = /(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
+                let groups = filePath.match(uds_file_regex)
+
+                if(!groups) throw new Error(`Selected File ${filePath} does not match UDS file format.`)
+
+                let batch_number = groups[5]
+
+
+                document.getElementById('starting-batch-number').value = batch_number
+
+                console.debug(`Found batch number ${batch_number}`)
+
                 console.debug(`Successfully selected ${filePath}`)
             }
         });
