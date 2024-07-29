@@ -247,7 +247,7 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
     })
 
     if(!(path in zip_map))
-      zip_map[path] = new AdmZip(path, {})
+      zip_map[path] = new AdmZip(null, {})
 
     for await (const line of reader) {
       let document_path = line.substring(702, 958).trim() // Assuming perfect UDS
@@ -267,6 +267,10 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
   zip.getEntries("").forEach((entry) => {
     // "\\Images\\test\\somefile.txt"
     let uds_version_of_entry = `\\${trim(entry.entryName, '\\')}`
+
+    if(entry.isDirectory)
+      // We don't care about directories.
+      return
 
     if(!(uds_version_of_entry in file_map))
       throw new Error(`${uds_version_of_entry} is not in an a resulting UDS file. Are you sure the ZIP goes with the UDS file?`)
@@ -288,6 +292,12 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
       })
     })
   })
+
+  for(let key in zip_map) {
+    let new_zip_name = `${key.substring(0, key.length - 4)}.zip`
+    await zip_map[key].writeZipPromise(new_zip_name, {})
+  }
+
 }
 
 module.exports = {
