@@ -1,13 +1,33 @@
-// See the Electron documentation for details on how to use preload scripts:
-// https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
+'use strict';
 
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('electron', {
-    send: (channel, data) => {
-        ipcRenderer.send(channel, data);
+contextBridge.exposeInMainWorld('backend', {
+    ChooseFileDialog: () => {
+        ipcRenderer.send('open-file-dialog')
     },
-    receive: (channel, func) => {
-        ipcRenderer.on(channel, (event, ...args) => func(...args));
+    SubmitForm: (data) => {
+        ipcRenderer.send('submitted-form', data);
+    },
+    OnFormSubmitted: (callback) => {
+        ipcRenderer.on('form-submitted', (event, response) => callback(response))
+    },
+    ChooseFolderDialog: (channel, event) => {
+        ipcRenderer.send('open-directory-dialog', event)
+    },
+    OnSelectedFile: (callback) => {
+        ipcRenderer.on('selected-file', (event, response) => callback(response))
+    },
+    OnSelectedDirectory: (callback) => {
+        ipcRenderer.on('selected-directory', (event, response) => callback(response))
+    },
+    OnProgressUpdate: (callback) => {
+        ipcRenderer.on('progress-update', (event, response) => callback(response))
+    },
+    OnProgressCompleted: (callback) => {
+        ipcRenderer.on('progress-done', (event, response) => callback(response))
+    },
+    CancelProcess: () => {
+        ipcRenderer.send('cancel-processing')
     }
 });

@@ -1,8 +1,21 @@
-const { createNewTrailer, sortFileByClaim, getClaimNumber } = require('./utils');
+'use strict';
 
+const { createNewTrailer, sortFileByClaim, getClaimNumber, swap_batch_number_in_file_name, join_path_parts, createNewHeader } = require('./server_utils');
 const { app, ipcMain, BrowserWindow, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+app.enableSandbox()
+
+let electron_path;
+if(process.platform === 'win32')
+  electron_path = 'node_modules/.bin/electron.cmd'
+else
+  electron_path = 'node_modules/.bin/electron';
+
+require('electron-reload')(__dirname, {
+  hardResetMethod: 'exit'
+})
 
 let mainWindow;
 
@@ -14,18 +27,22 @@ if (require('electron-squirrel-startup')) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
+    width: 500,
+    height: 900,
+    resizable: false,
+    center: true,
+    modal: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-    },
+      nodeIntegration: false
+    }
   });
 
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
@@ -57,30 +74,33 @@ app.on('window-all-closed', () => {
 
 
 //main function on submission
-ipcMain.on('submission-form', (event, formData) => {
-  console.log('Form data received:', formData);
-  const filePath = formData.filePath;
+ipcMain.on('submitted-form', (event, formData) => {
+  console.debug('Form data received:', formData);
+  const filePath = formData["chosen-file"];
   const fileName = path.basename(filePath);
   const recordType = fileName[5];
-  const { name } = path.parse(filePath);
-  const numberOfFiles = parseInt(formData['number-of-files']);
-  const outputDir = formData.outputDir;
+  const file_name = path.parse(filePath).name;
+  const numberOfFiles = parseInt(formData["number-of-files"]);
+  const outputDir = formData["output-directory"];
+  const startingBatchNumber = formData["starting-batch-number"];
   let isProcessingCanceled = false;
-  console.log('File path received:', filePath);
+  console.debug('File path received:', filePath);
   const progressWindow = new BrowserWindow({
     width: 400,
     height: 250,
     parent: mainWindow,
     modal: true,
+    center: true,
     webPreferences: {
       contextIsolation: true,
       enableRemoteModule: false,
-      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.js')
     },
   });
 
   progressWindow.loadFile(path.join(__dirname, 'progress.html'));
-  fs.readFile(formData.filePath, 'utf-8', (err, data) => {
+  fs.readFile(formData["chosen-file"], 'utf-8', (err, data) => {
     if (err) {
       console.error('Error reading file:', err);
       event.sender.send('form-submitted', 'Error processing file.');
@@ -95,17 +115,7 @@ ipcMain.on('submission-form', (event, formData) => {
 
       const result = sortFileByClaim(lines, recordType);
       const sortedLines = result.sortedLines;
-      const uniqueClaims = result.uniqueClaims;
 
-      //THE FOLLOWING CODE IS CAN BE USED AS A RESTRAINT ON THE USER TO NOT REQUEST MORE FILES THAN THERE ARE UNIQUE CLAIMS
-      //BUT THE WAY IT WORKS WITHOUT THE FOLLOWING CODE IMPLEMENTED IS IT WILL CREATE THE NUMBER OF FILES UNTIL THE LINES ARE ITERATED THROUGH
-      //WOULD NEED TO GET SENT BACK TO THE RENDERER TO DISPLAY A MESSAGE TO THE USER IF WE GO THIS ROUTE
-      // if (numberOfFiles > uniqueClaims) {    
-      //   console.error('Number of files requested is greater than the number of unique claims.');
-      //   event.sender.send('form-submitted', 'Number of files requested is greater than the number of unique claims. Please lower the number of files and try again.');
-      //   return;
-      // }
-      
       let fileIndex = 1;
       let i = 0;
 
@@ -128,17 +138,20 @@ ipcMain.on('submission-form', (event, formData) => {
           }
         }
 
+        let new_batch_number = startingBatchNumber + fileIndex - 1 // Starting at 1, so need to move the number left
         const chunk = sortedLines.slice(i, endIndex);
-        const newTrailer = createNewTrailer(chunk, recordType, trailer);
-        const fileContent = [header, ...chunk, newTrailer].join('\n') + '\n';
-        const newFileName = `${outputDir}/${name}-${fileIndex}.txt`;
+        const newTrailer = createNewTrailer(chunk, recordType, new_batch_number, trailer);
+        const newHeader = createNewHeader(chunk, recordType, new_batch_number, header)
+        const fileContent = [newHeader, ...chunk, newTrailer].join('\r\n') + '\r\n';
+        const new_file_name = swap_batch_number_in_file_name(file_name, new_batch_number)
+        const new_file_path = join_path_parts(outputDir, `${new_file_name}-${fileIndex}.txt`)
         let progress = Math.round(((i + linesPerFile) / numberOfLinesInFile) * 100);  //progress is kinda difficult to calc with this method since we're not using two loops.. this is basically just saying when a file is done.. maybe can keep track of chunk len outside the loop
         progressWindow.webContents.send('progress-update', progress);
-        fs.writeFile(newFileName, fileContent, (writeErr) => {
+        fs.writeFile(new_file_path, fileContent, (writeErr) => {
           if (writeErr) {
-            console.error('Error writing file:', writeErr);
+            throw new Error(`There was an error writing to ${new_file_path}: ${writeErr.message}`)
           } else {
-            console.log(`File ${newFileName} written successfully.`);
+            console.debug(`File ${new_file_path} written successfully.`);
           }
         });
         fileIndex++;
@@ -157,7 +170,6 @@ ipcMain.on('submission-form', (event, formData) => {
   // progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');  #when done
 });
 
-//choose file
 ipcMain.on('open-file-dialog', (event) => {
   const result = dialog.showOpenDialogSync(mainWindow,{
       properties: ['openFile'],
@@ -203,6 +215,6 @@ ipcMain.on('open-zip-file-dialog', (event) => {
 });
 
 ipcMain.on('cancel-processing', (event) => {
-  isProcessingCanceled = true;
-  console.log('Processing canceled by the user.');
+  //isProcessingCanceled = true;
+  console.debug('Processing canceled by the user.');
 });
