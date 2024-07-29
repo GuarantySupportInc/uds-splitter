@@ -273,7 +273,10 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
 
     console.debug(`Processing ZIP entry: ${entry.entryName}`)
 
-    zip.readFileAsync(entry, (data) => {
+    zip.readFileAsync(entry, (data, err) => {
+
+      if(err)
+        throw new Error(`Something went wrong when reading ZIP Entry '${entry.entryName}' from '${original_zip_file}'`)
 
       // Basically one Full Path could belong to multiple UDS files, so we store the list of UDS files for each full path
       // then we get the resulting ZIP for each eventual UDS file. Thus we hope that zip.readFileAsync() is only called
