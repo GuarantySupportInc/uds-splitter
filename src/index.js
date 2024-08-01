@@ -164,9 +164,11 @@ ipcMain.on('submitted-form', (event, formData) => {
     }
 
     if (recordType.toLowerCase() === 'i') {
-      await create_zip_files(zip_file_path, new_uds_files)
+      create_zip_files(zip_file_path, new_uds_files).catch(result => {
+        // Do something with the error message. Maybe a popup?
+        console.error(result.message)
+      })
     }
-
     if (isProcessingCanceled) {
       event.sender.send('form-submitted', 'Processing was canceled.');
       progressWindow.close();

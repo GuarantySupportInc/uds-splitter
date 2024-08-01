@@ -102,6 +102,15 @@
         
         function format_batch_number() {
             const element = document.getElementById('starting-batch-number')
+
+            if(element.value > 999) {
+                element.value = "999"
+            }
+
+            if(element.value < 1) {
+                element.value = "001"
+            }
+
             element.value = padDigits(element.value, 3)
         }
 

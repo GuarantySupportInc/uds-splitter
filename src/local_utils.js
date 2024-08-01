@@ -15,7 +15,7 @@ function file_sep(file_name) {
     if(starts_with_volume_letter.test(file_name)) {
         // WINDOWS
         return "\\"
-    } else if(starts_with_slash.text(file_name)) {
+    } else if(starts_with_slash.test(file_name)) {
         // LINUX/MAC
         return "/"
     } else if(file_name.includes('\\')) {

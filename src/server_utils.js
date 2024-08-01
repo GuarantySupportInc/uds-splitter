@@ -3,8 +3,10 @@
 
 // START OF FILE MUST LOOK LIKE A UDS FILE
 const AdmZip = require('adm-zip');
-const fs = require("node:fs");
-const {createInterface} = require("node:readline");
+const fs = require("fs");
+const path = require("path");
+const ReadLine = require('readline')
+const { once } = require('events');
 const UDS_FILE_REGEX = /^(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
 
 function padDigits(number, digits) {
@@ -174,25 +176,6 @@ function sortFileByClaim(lines, recordType) {
   return { sortedLines: lines, uniqueClaims: uniqueClaims.size };
 }
 
-function file_sep(file_name) {
-  let starts_with_volume_letter = /^[A-Za-z]:\\/
-  let starts_with_slash = /^\//
-
-  if(starts_with_volume_letter.test(file_name)) {
-    // WINDOWS
-    return "\\"
-  } else if(starts_with_slash.text(file_name)) {
-    // LINUX/MAC
-    return "/"
-  } else if(file_name.includes('\\')) {
-    return "\\"
-  } else if(file_name.includes("/")) {
-    return "/"
-  } else {
-    throw new Error(`Not sure what file path separator we are using: '${file_name}'`)
-  }
-}
-
 function swap_batch_number_in_file_name(uds_file_name, new_batch_number) {
   // START OF uds_file_name MUST LOOK LIKE A UDS FILE
   if(!uds_file_name.match(UDS_FILE_REGEX))
@@ -203,18 +186,37 @@ function swap_batch_number_in_file_name(uds_file_name, new_batch_number) {
 }
 
 function trim(string, character) {
+  if(character === "\\") {
+    // When we convert to regex, we kinda need to cancel the '\' twice so it looks like '\\' when it shows up in the string.
+    character = "\\\\"
+  }
   const end_of_string_regex = new RegExp(character + "*$")
   const start_of_string_regex = new RegExp("^" + character + "*")
 
   return string.replace(start_of_string_regex, '').replace(end_of_string_regex, '');
 }
 
+/**
+ * A utility function for creating a clean LOCAL path using the appropriate path separator.
+ * @param args
+ * @returns {string}
+ */
 function join_path_parts(...args) {
-  const sep = file_sep(args[0])
+  args.forEach((arg, index) => args[index] = trim(arg, path.sep))
 
-  args.forEach(arg => trim(arg, sep))
+  return args.join(path.sep)
+}
 
-  return args.join(sep)
+/**
+ * I think the introduction of 'async' has added some out-of-sync issues between threads which results in variables
+ * not being populated as expected. Just waiting for those variables to 'catch up' seems good enough for now.
+ * @param zip
+ * @returns {Promise<void>}
+ */
+async function wait_for_zip_to_populate(zip) {
+  while(!(zip.getEntryCount() > 0)) {
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
 }
 
 /**
@@ -237,25 +239,32 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
   }
 
   // Populate file_map
-  for(let path in final_uds_file_paths.values()) {
+  for (const path of final_uds_file_paths) {
     // Set up line-by-line processing
 
     let file_stream = fs.createReadStream(path)
-    let reader = createInterface({
-      input: file_stream,
-      crlfDelay: Infinity
-    })
 
-    if(!(path in zip_map))
+    await Promise.all([once(file_stream, "open")]) // If this is missing, reader becomes an empty iterator.
+
+    let reader = ReadLine.createInterface({input: file_stream, crlfDelay: Infinity})
+
+    if (!(path in zip_map))
       zip_map[path] = new AdmZip(null, {})
 
+
     for await (const line of reader) {
+      if(line.startsWith("HEADER") || line.startsWith("TRAILER"))
+          continue
+
+      if(line === "")
+        continue
+
       let document_path = line.substring(702, 958).trim() // Assuming perfect UDS
       let file_name = line.substring(958, 1214).trim()
 
-      let full_path = join_path_parts(document_path, file_name)
+      let full_path = "\\" + join_path_parts(document_path, file_name).replace("/", "\\")
 
-      if(!(full_path in file_map)) {
+      if (!(full_path in file_map)) {
         file_map[full_path] = new Set([path])
       } else {
         file_map[full_path].add(path)
@@ -266,7 +275,7 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
   // Determine where this entry to should go in the resulting uds files
   zip.getEntries("").forEach((entry) => {
     // "\\Images\\test\\somefile.txt"
-    let uds_version_of_entry = `\\${trim(entry.entryName, '\\')}`
+    let uds_version_of_entry = `\\${trim(entry.entryName, '\\').replaceAll("/", "\\")}`
 
     if(entry.isDirectory)
       // We don't care about directories.
@@ -287,15 +296,27 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
       // ONCE but the same data is propagated to as many UDS files as we need.
 
       file_map[uds_version_of_entry].forEach((uds_source_file) => {
-        let resulting_zip = zip_map[uds_source_file]
-        resulting_zip.addFile(entry.entryName, data , entry.comment(), entry.attr())
+        zip_map[uds_source_file].addFile(entry.entryName, data , entry.comment, entry.attr)
+        console.debug(zip_map[uds_source_file].getEntryCount())
       })
     })
   })
 
   for(let key in zip_map) {
     let new_zip_name = `${key.substring(0, key.length - 4)}.zip`
-    await zip_map[key].writeZipPromise(new_zip_name, {})
+
+    let new_zip_file = zip_map[key]
+
+    await wait_for_zip_to_populate(new_zip_file)
+
+    if(new_zip_file.getEntryCount() === 0)
+      throw new Error(`ZIP file ${new_zip_name} will be created with no entries. Something went wrong.`)
+
+    new_zip_file.writeZip(new_zip_name, (error) => {
+      if (error) {
+        console.error(error)
+      }
+    })
   }
 
 }
