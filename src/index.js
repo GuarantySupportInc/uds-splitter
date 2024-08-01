@@ -147,12 +147,13 @@ ipcMain.on('submitted-form', (event, formData) => {
       const fileContent = [newHeader, ...chunk, newTrailer].join('\r\n') + '\r\n';
       const new_file_name = swap_batch_number_in_file_name(file_name, new_batch_number)
 
+      let new_file_path;
       if(path.sep === "/") {
         // The problem is Windows will have C:// which doesn't get trimmed, but Linux will have / at the start which DOES get trimmed. Not good.
         // The assumption is outputDir is ALWAYS an absolute path. The "/" solution won't work for relative paths.
-        const new_file_path = "/" + join_path_parts(outputDir, `${new_file_name}-${fileIndex}.txt`)
+        new_file_path = "/" + join_path_parts(outputDir, `${new_file_name}-${fileIndex}.txt`)
       } else {
-        const new_file_path = join_path_parts(outputDir, `${new_file_name}-${fileIndex}.txt`)
+        new_file_path = join_path_parts(outputDir, `${new_file_name}-${fileIndex}.txt`)
       }
 
       let progress = Math.round(((i + linesPerFile) / numberOfLinesInFile) * 100);  //progress is kinda difficult to calc with this method since we're not using two loops.. this is basically just saying when a file is done.. maybe can keep track of chunk len outside the loop
