@@ -20,7 +20,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.4.0",
     "@electron-forge/plugin-fuses": "^7.4.0",
     "@electron/fuses": "^1.8.0",
-    "electron": "31.2.1"
+    "electron": "31.3.1"
   },
   "keywords": [],
   "author": {
@@ -32,5 +32,9 @@
     "adm-zip": "^0.5.14",
     "electron-reload": "^2.0.0-alpha.1",
     "electron-squirrel-startup": "^1.0.1"
+  },
+  "overrides": {
+    "debug": "latest",
+    "yauzl": "latest"
   }
 }
