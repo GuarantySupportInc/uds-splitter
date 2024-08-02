@@ -11,12 +11,20 @@ and also make note of the features completed or pending below!
 | :x:                | Not completed |
 
 
-| Feature                              | Implementation     | Unit Testing       | 3rd Party Verified |
+| Stage              | Meaning                                                   |
+|--------------------|-----------------------------------------------------------|
+| Implementation     | Code is written in this stage                             |
+| Unit Testing       | Code is tested for reliability and flexibility            |
+| 3rd-Party Verified | Another party outside GSI has confirmed the feature works |
+
+
+| Feature                              | Implementation     | Unit Testing       | 3rd-Party Verified |
 |--------------------------------------|--------------------|--------------------|--------------------|
 | Split A Record                       | :white_check_mark: | :pencil2:          | :x:                |
 | Split F Record                       | :white_check_mark: | :pencil2:          | :x:                |
 | Split G Record                       | :white_check_mark: | :pencil2:          | :x:                |
 | Split I Record                       | :pencil2:          | :x:                | :x:                |
+| Split M Record                       | :white_check_mark: | :pencil2:          | :x:                |
 | Split B Record                       | :white_check_mark: | :pencil2:          | :x:                |
 | Split C Record                       | :x:                | :x:                | :x:                |
 | Split D Record                       | :x:                | :x:                | :x:                |
@@ -31,7 +39,10 @@ and also make note of the features completed or pending below!
 | 'Help' links in menubar              | :x:                | :x:                | :x:                |
 | Downloadable installation executable | :x:                | :x:                | :x:                |
 
-
+## Notes from the team (August 2nd, 2024)
+We are currently in the process of getting automated unit testing in place for A/F/G/M/B. I Records are in progress
+still mainly due to the ZIP file companion which needs special attention. Our focus has been on the bare minimum use-case
+that would be immediately helpful with priorities provided by a member from North Carolina (A/F/I/B).
 
 
 
