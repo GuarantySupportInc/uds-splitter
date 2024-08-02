@@ -7,10 +7,11 @@ and also make note of the features completed or pending below!
 :white_check_mark: Completed
 :pencil2:
 
-| Status             | Icon        |
-|--------------------|-------------|
-| :white_check_mark: | Completed   |
-|      :pencil2:              | In Progress |
+| Status             | Icon          |
+|--------------------|---------------|
+| :white_check_mark: | Completed     |
+| :pencil2:          | In Progress   |
+| :x:                | Not completed |
 
 
 
