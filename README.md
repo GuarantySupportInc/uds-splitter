@@ -11,7 +11,7 @@ and also make note of the features completed or pending below!
 | :x:                | Not completed |
 
 
-| Feature                              | Code               | Unit Testing       | 3rd Party Verified |
+| Feature                              | Implementation     | Unit Testing       | 3rd Party Verified |
 |--------------------------------------|--------------------|--------------------|--------------------|
 | Split A Record                       | :white_check_mark: | :pencil2:          | :x:                |
 | Split F Record                       | :white_check_mark: | :pencil2:          | :x:                |
