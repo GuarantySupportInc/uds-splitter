@@ -101,11 +101,13 @@ ipcMain.on('submitted-form', (event, formData) => {
   });
 
   progressWindow.loadFile(path.join(__dirname, 'progress.html'));
+  console.log('Record type:', recordType);
   fs.readFile(formData["chosen-file"], 'utf-8', async (err, data) => {
     if (err) {
+      console.error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
       throw new Error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
     }
-
+    console.log('File read successfully.');
     const lines = data.split('\n');
 
     const header = lines.shift();
@@ -158,6 +160,7 @@ ipcMain.on('submitted-form', (event, formData) => {
 
       let progress = Math.round(((i + linesPerFile) / numberOfLinesInFile) * 100);  //progress is kinda difficult to calc with this method since we're not using two loops.. this is basically just saying when a file is done.. maybe can keep track of chunk len outside the loop
       progressWindow.webContents.send('progress-update', progress);
+      console.log(`Writing file ${new_file_path}...`);
       fs.writeFile(new_file_path, fileContent, (writeErr) => {
         if (writeErr) {
           throw new Error(`There was an error writing to ${new_file_path}: ${writeErr.message}`)
@@ -187,6 +190,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');
     }
   });
+  console.log('End')
   // progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');  #when done
 });
 
