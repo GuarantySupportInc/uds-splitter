@@ -44,7 +44,5 @@ We are currently in the process of getting automated unit testing in place for A
 still mainly due to the ZIP file companion which needs special attention. Our focus has been on the bare minimum use-case
 that would be immediately helpful with priorities provided by a member from North Carolina (A/F/I/B).
 
-
-
-
-
+Some low-hanging fruit will be tackled early next week while automated testing progresses, but the first milestone is
+to get 3rd-Party Verification for a few of the above features.
