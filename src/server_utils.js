@@ -60,7 +60,7 @@ function createNewTrailer(chunk, recordType, new_batch_number, trailer) {
   return newTrailer;
 }
 
-function createNewHeader(chunk, recordType, new_batch_number, header) {
+function createNewHeader(new_batch_number, header) {
   // Fix Batch Number
   // Header and Trailer have same Batch Number positions.
   return header.substring(0, 34) + padDigits(new_batch_number, 3) + header.substring(37)
@@ -322,12 +322,16 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
 }
 
 module.exports = {
+  padDigits,
   createNewTrailer,
   sortFileByClaim,
   getClaimNumber,
+  convertUDSCurrencyToFloat,
+  convertFloatToUDSCurrency,
   UDS_FILE_REGEX,
   swap_batch_number_in_file_name,
   join_path_parts,
   createNewHeader,
-  create_zip_files
+  create_zip_files,
+  trim
 };

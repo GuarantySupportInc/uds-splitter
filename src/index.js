@@ -145,7 +145,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       let new_batch_number = parseInt(startingBatchNumber) + fileIndex - 1 // Starting at 1, so need to move the number left
       const chunk = sortedLines.slice(i, endIndex);
       const newTrailer = createNewTrailer(chunk, recordType, new_batch_number, trailer);
-      const newHeader = createNewHeader(chunk, recordType, new_batch_number, header)
+      const newHeader = createNewHeader(new_batch_number, header)
       const fileContent = [newHeader, ...chunk, newTrailer].join('\r\n') + '\r\n';
       const new_file_name = swap_batch_number_in_file_name(file_name, new_batch_number)
 
