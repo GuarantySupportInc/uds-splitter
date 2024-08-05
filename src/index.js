@@ -147,8 +147,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       const fileContent = [newHeader, ...chunk, newTrailer].join('\r\n') + '\r\n';
       const new_file_name = swap_batch_number_in_file_name(file_name, new_batch_number)
 
-
-      let new_file_path = null;
+      let new_file_path;
       if(path.sep === "/") {
         // The problem is Windows will have C:// which doesn't get trimmed, but Linux will have / at the start which DOES get trimmed. Not good.
         // The assumption is outputDir is ALWAYS an absolute path. The "/" solution won't work for relative paths.
