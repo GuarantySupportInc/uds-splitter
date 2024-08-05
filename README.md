@@ -24,7 +24,7 @@ and also make note of the features completed or pending below!
 | Split F Record                       | :white_check_mark: | :pencil2:          | :x:                |
 | Split G Record                       | :white_check_mark: | :pencil2:          | :x:                |
 | Split I Record                       | :pencil2:          | :x:                | :x:                |
-| Split M Record                       | :white_check_mark: | :pencil2:          | :x:                |
+| Split M Record                       | :x:                | :x:                | :x:                |
 | Split B Record                       | :white_check_mark: | :pencil2:          | :x:                |
 | Split C Record                       | :x:                | :x:                | :x:                |
 | Split D Record                       | :x:                | :x:                | :x:                |
