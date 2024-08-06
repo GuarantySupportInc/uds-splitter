@@ -30,8 +30,9 @@ and also make note of the features completed or pending below!
 | Split D Record                       | :x:                | :x:                | :x:                |
 | Keep claims together during split    | :white_check_mark: | :pencil2:          | :x:                |
 | Logging to file                      | :x:                | :x:                | :x:                |
-| Automated Testing                    | :x:                | :x:                | :x:                |
-| Code Signing Certificate             | :x:                | :x:                | :x:                |
+| Automated Builds                     | :x:                | :x:                | :x:                |
+| Windows Code Signing Certificate     | :x:                | :x:                | :x:                |
+| Apple Code Signing Certificate       | :x:                | :x:                | :x:                |
 | Automatic Record Type Detection      | :white_check_mark: | :white_check_mark: | :x:                |
 | Progress Bar                         | :white_check_mark: | :pencil2:          | :x:                |
 | Open Folder on Complete              | :white_check_mark: | :white_check_mark: | :x:                |

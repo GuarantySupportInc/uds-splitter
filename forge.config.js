@@ -1,5 +1,9 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const process = require("process")
+
+// process.env.SOMETHING
+
 
 module.exports = {
   packagerConfig: {
@@ -8,21 +12,22 @@ module.exports = {
   rebuildConfig: {},
   makers: [
     {
-      name: '@electron-forge/maker-squirrel',
+      name: '@electron-forge/maker-squirrel', // WINDOWS
       config: {},
+      // Code Signing
+      // https://www.electronforge.io/guides/code-signing/code-signing-windows
+    },
+    {
+      name: '@electron-forge/maker-pkg', // MAC
+      config: {
+        // keychain: 'my-secret-ci-keychain'
+        // other configuration options
+      }
     },
     {
       name: '@electron-forge/maker-zip',
       platforms: ['darwin'],
-    },
-    {
-      name: '@electron-forge/maker-deb',
-      config: {},
-    },
-    {
-      name: '@electron-forge/maker-rpm',
-      config: {},
-    },
+    }
   ],
   plugins: [
     {
@@ -41,4 +46,18 @@ module.exports = {
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
+  publishers: [
+    {
+      name: "@electron-forge/publisher-github",
+      config: {
+        repository: {
+          owner: "GuarantySupportInc",
+          name: "uds-splitter"
+        },
+        prerelease: true,
+        draft: true,
+        generateReleaseNotes: true,
+      }
+    }
+  ]
 };
