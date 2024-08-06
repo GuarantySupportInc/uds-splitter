@@ -35,6 +35,9 @@ pipeline {
             steps {
                 script {
                     sh 'npm ci'
+                    sh 'git tag -a "v$(date +%Y.%m.%d)" -m "Version $(date +%Y.%m.%d)"'
+                    sh 'npm --no-git-tag-version version'
+                    sh 'npm version from-git'
                     sh 'npx electron-forge make'
                 }
             }
@@ -60,7 +63,8 @@ pipeline {
         stage('Remote Build') {
             steps {
                 script {
-
+                    sh 'git push origin "v$(date +%Y.%m.%d)"'
+                    sh 'npm run publish'
                 }
             }
         }
