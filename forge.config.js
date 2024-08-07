@@ -8,6 +8,7 @@ const process = require("process")
 module.exports = {
   packagerConfig: {
     asar: true,
+    name: 'UDS Splitter Utility'
   },
   rebuildConfig: {},
   makers: [
