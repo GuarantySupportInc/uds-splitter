@@ -39,14 +39,6 @@ pipeline {
                 }
             }
         }
-        stage('Test') {
-            steps {
-                script {
-                    sh 'npm test'
-                    sh 'npm run wdio'
-                }
-            }
-        }
         stage('Scan') {
             steps {
                 script {
@@ -54,6 +46,14 @@ pipeline {
                     sh 'snyk ignore --file-path=./node_modules'
                     sh 'snyk ignore --file-path=./out'
                     sh 'snyk code test'
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                script {
+                    sh 'npm test'
+                    sh 'npm run wdio'
                 }
             }
         }
