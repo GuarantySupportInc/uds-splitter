@@ -10,7 +10,6 @@ pipeline {
         SNYK_TOKEN = credentials('snyk')
         SNYK_CFG_ORG = 'guaranty-support-inc'
 
-
         // https://www.electronjs.org/docs/latest/tutorial/testing-on-headless-ci
         // https://stackoverflow.com/a/40678605
         DISPLAY = '1'
@@ -29,6 +28,7 @@ pipeline {
                 sh 'az config set defaults.acr=${AZURE_REPOSITORY}'
                 sh 'az login --identity'
                 sh 'az acr login --name ${AZURE_REPOSITORY}'
+                sh 'gh auth status'
             }
         }
         stage('Install') {
@@ -61,6 +61,9 @@ pipeline {
             }
         }
         stage('Remote Build') {
+            environment {
+                GITHUB_TOKEN = sh(returnStdout: true, script: 'gh auth token')
+            }
             steps {
                 script {
                     sh 'git push origin "v$(date +%Y.%m.%d)"'
