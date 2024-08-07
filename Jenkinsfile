@@ -15,6 +15,7 @@ pipeline {
         DISPLAY = '1'
 
         AZURE_REPOSITORY = 'insolvregistry.azurecr.io'
+        POTENTIAL_VERSION = sh(returnStdout: true, script: '"$(date +%Y.%m.%d)"')
     }
 
     stages {
@@ -34,7 +35,8 @@ pipeline {
             steps {
                 script {
                     sh 'npm ci'
-                    sh 'git tag -a "v$(date +%Y.%m.%d)" -m "Version $(date +%Y.%m.%d)"'
+                    sh 'git tag -d "v${POTENTIAL_VERSION}" > /dev/null' // Remove local git tags
+                    sh 'git tag -a "v${POTENTIAL_VERSION}" -m "Version ${POTENTIAL_VERSION}"'
                     sh 'npm --no-git-tag-version version'
                     sh 'npm version from-git'
                     sh 'npm run make -- --platform win32'
