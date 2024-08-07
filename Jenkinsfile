@@ -36,6 +36,7 @@ pipeline {
                     sh 'git tag -a "v${POTENTIAL_VERSION}" -m "Version ${POTENTIAL_VERSION}"'
                     sh 'npm version from-git --no-git-tag-version'
                     sh 'npm run make -- --platform win32'
+                    sh 'npm run make -- --platform linux'
                 }
             }
         }

@@ -18,6 +18,10 @@ module.exports = {
       // https://www.electronforge.io/guides/code-signing/code-signing-windows
     },
     {
+      name: '@electron-forge/maker-deb',
+      config: {}
+    },
+    {
       name: '@electron-forge/maker-pkg', // MAC
       config: {
         // keychain: 'my-secret-ci-keychain'
