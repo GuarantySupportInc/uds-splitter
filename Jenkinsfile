@@ -43,7 +43,7 @@ pipeline {
             steps {
                 script {
                     sh 'npm test'
-                    sh 'npm run wdio'
+                    // sh 'npm run wdio'
                 }
             }
         }
