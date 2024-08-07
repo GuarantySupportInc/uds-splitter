@@ -35,7 +35,7 @@ pipeline {
             steps {
                 script {
                     sh 'npm ci'
-                    sh 'git tag -d "v${POTENTIAL_VERSION}" > /dev/null' // Remove local git tags
+                    sh 'git tag -d "v${POTENTIAL_VERSION}" || true' // Remove local git tags
                     sh 'git tag -a "v${POTENTIAL_VERSION}" -m "Version ${POTENTIAL_VERSION}"'
                     sh 'npm version from-git --no-git-tag-version'
                     sh 'npm run make -- --platform win32'
