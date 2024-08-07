@@ -24,7 +24,6 @@ pipeline {
                     env.GIT_LOCAL_BRANCH = get_git_branch(env.GIT_BRANCH)
                 }
 
-                sh './ncigf/build/utils/login-to-azure.sh';
                 sh 'az config set defaults.acr=${AZURE_REPOSITORY}'
                 sh 'az login --identity'
                 sh 'az acr login --name ${AZURE_REPOSITORY}'
