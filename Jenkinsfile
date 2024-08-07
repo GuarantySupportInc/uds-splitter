@@ -14,7 +14,6 @@ pipeline {
         // https://stackoverflow.com/a/40678605
         DISPLAY = '1'
 
-        AZURE_REPOSITORY = 'insolvregistry.azurecr.io'
         POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"').trim()
     }
 
@@ -25,9 +24,7 @@ pipeline {
                     env.GIT_LOCAL_BRANCH = get_git_branch(env.GIT_BRANCH)
                 }
 
-                sh 'az config set defaults.acr=${AZURE_REPOSITORY}'
                 sh 'az login --identity'
-                sh 'az acr login --name ${AZURE_REPOSITORY}'
                 sh 'gh auth status'
             }
         }
