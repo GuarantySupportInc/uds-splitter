@@ -12,6 +12,7 @@ pipeline {
                     env.GIT_LOCAL_BRANCH = get_git_branch(env.GIT_BRANCH)
                 }
 
+                sh 'chmod +x build/*.sh'
                 sh 'az login --identity'
                 sh 'gh auth status'
             }
@@ -19,9 +20,11 @@ pipeline {
         stage('Install') {
             environment {
                 POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"').trim()
+                CURRENT_COMMIT = sh(returnStdout: true, script: 'git log -1 | sed -n "s/^commit //p"')
             }
             steps {
                 script {
+                    sh 'build/notify-github.sh "pending" "Setting up environment"'
                     sh 'npm ci'
                     sh 'git tag -d "v${POTENTIAL_VERSION}" || true' // Remove local git tags
                     sh 'git tag -a "v${POTENTIAL_VERSION}" -m "Version ${POTENTIAL_VERSION}"'
@@ -39,6 +42,7 @@ pipeline {
             }
             steps {
                 script {
+                    sh 'build/notify-github.sh "pending" "Testing"'
                     sh 'npm test'
                     sh 'npm run wdio-headless'
                 }
@@ -52,6 +56,7 @@ pipeline {
             }
             steps {
                 script {
+                    sh 'build/notify-github.sh "pending" "Synk Scan"'
                     sh 'snyk.sh auth ${SNYK_TOKEN}'
                     sh 'snyk.sh ignore --file-path=./node_modules'
                     sh 'snyk.sh ignore --file-path=./out'
@@ -65,6 +70,7 @@ pipeline {
             }
             steps {
                 script {
+                    sh 'build/notify-github.sh "pending" "Publishing"'
                     sh 'git push origin "v$(date +%Y.%m.%d)"'
                     sh 'npm run publish'
                 }
@@ -72,10 +78,14 @@ pipeline {
         }
     }
     post {
-        always {
-            script {
-                expose_jenkins_properties_to_env()
-            }
+        success {
+            sh 'build/notify-github.sh "success" "Build was successful"'
+        }
+        failure {
+            sh 'build/notify-github.sh "failure" "Testing has failed"'
+        }
+        aborted {
+            sh 'build/notify-github.sh "failure" "Build was aborted partway"'
         }
     }
 }
