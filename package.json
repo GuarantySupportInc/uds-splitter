@@ -11,7 +11,7 @@
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\"",
     "wdio": "wdio run ./wdio.conf.js",
-    "wdio-headless": "wdio run ./wdio.conf.headless.js",
+    "wdio-headless": "xvfb-run wdio run ./wdio.conf.headless.js",
     "test": "mocha"
   },
   "devDependencies": {
