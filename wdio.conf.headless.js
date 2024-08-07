@@ -53,13 +53,9 @@ exports.config = {
         browserName: 'electron',
         // Electron service options
         // see https://webdriver.io/docs/desktop-testing/electron/configuration/#service-options
-        'wdio:electronServiceOptions': {
-            // custom application args
-            appArgs: ["--headless", "--disable-gpu"]
-        },
-        'goog:chromeOptions': {
-            args: ['headless', 'disable-gpu'],
-        },
+        'wdio:devtoolsOptions': {
+            headless: true
+        }
     }],
 
     //
