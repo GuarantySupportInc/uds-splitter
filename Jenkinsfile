@@ -15,7 +15,7 @@ pipeline {
         DISPLAY = '1'
 
         AZURE_REPOSITORY = 'insolvregistry.azurecr.io'
-        POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"')
+        POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"').trim()
     }
 
     stages {
