@@ -39,21 +39,21 @@ pipeline {
                 }
             }
         }
-        stage('Scan') {
-            steps {
-                script {
-                    sh 'snyk auth ${SNYK_TOKEN}'
-                    sh 'snyk ignore --file-path=./node_modules'
-                    sh 'snyk ignore --file-path=./out'
-                    sh 'snyk code test'
-                }
-            }
-        }
         stage('Test') {
             steps {
                 script {
                     sh 'npm test'
                     sh 'npm run wdio'
+                }
+            }
+        }
+        stage('Scan') {
+            steps {
+                script {
+                    sh 'snyk.sh auth ${SNYK_TOKEN}'
+                    sh 'snyk.sh ignore --file-path=./node_modules'
+                    sh 'snyk.sh ignore --file-path=./out'
+                    sh 'snyk.sh code test'
                 }
             }
         }
