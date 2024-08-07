@@ -93,3 +93,6 @@ out/
 
 # Jetbrains stuff
 .idea
+
+*.txt
+*.zip
