@@ -108,7 +108,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       throw new Error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
     }
     console.info('File read successfully.');
-    const lines = data.split('\n');
+    const lines = data.split('\r\n');
 
     const header = lines.shift();
     let trailer = lines.pop();

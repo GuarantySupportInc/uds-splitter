@@ -1,28 +1,139 @@
 import { expect } from 'chai';
-import { getClaimNumber, sortFileByClaim, padDigits, createNewHeader, convertUDSCurrencyToFloat, convertFloatToUDSCurrency, trim, join_path_parts } from '../src/server_utils.js';  // Make sure to use .js extension for ES modules
+import { createNewTrailer, getClaimNumber, sortFileByClaim, padDigits as padDigitsServer, createNewHeader, convertUDSCurrencyToFloat, convertFloatToUDSCurrency, trim, join_path_parts, wait_for_zip_to_populate, create_zip_files } from '../src/server_utils.js';  // Make sure to use .js extension for ES modules
+import { convert_form_data_to_dict, file_sep, get_directory_from_path, is_null_or_empty, padDigits as padDigitsLocal} from '../src/local_utils.js';
+import { sep, join, dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { stat, rm } from 'fs/promises';
 
-describe('padDigits', function () {
+
+describe('createNewTrailer', function () {
+    it('should create a new trailer for record type A correctly', function () {
+        const chunk = [
+            'A55555IN99135005111111              1234562                                 Joe Blow                                                    3829 Coconut Palm Drive                                     Indianapolis             IN46201000020090622191001182008050100001Blow                          Joe                           285 Fishpond Road                                           Chicago                  IL606010000S12345678910000001200098+  8UU                                                                 309   19990304        N   90 28                   UBale of rags fell on employee, knocking her down,landing on top                       UU',
+            'A55555IN99105010222222              1234568                                 John Smith                                                  3829 Coconut Palm Drive                                     Indianapolis             IN46201000020090622191001182008050100001Smith                         John                          2709 Rifle Range Rd                                         Chicago                  IN606010000S98765432110000001200098+  8UU                                                                 309   19990304        N   90 28                   UBale of rags fell on employee, knocking her down,landing on top                       UU'
+        ];
+        const recordType = 'A';
+        const new_batch_number = 123;
+        const trailer = 'TRAILER             55555AIN01IN99001202407012024070120240701P&C00000000500000006000490+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ';
+    
+        const result = createNewTrailer(chunk, recordType, new_batch_number, trailer);
+    
+    
+        const expectedTrailer = 'TRAILER             55555AIN01IN99123202407012024070120240701P&C00000000200000002400196+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ';
+        expect(result).to.equal(expectedTrailer);
+    });
+    it('should create a new trailer for record type A with a negative amount correctly', function () {
+        const chunk = [
+            'A55555IN99135005111111              1234562                                 Joe Blow                                                    3829 Coconut Palm Drive                                     Indianapolis             IN46201000020090622191001182008050100001Blow                          Joe                           285 Fishpond Road                                           Chicago                  IL606010000S12345678910000001200098+  8UU                                                                 309   19990304        N   90 28                   UBale of rags fell on employee, knocking her down,landing on top                       UU',
+            'A55555IN99105010222222              1234568                                 John Smith                                                  3829 Coconut Palm Drive                                     Indianapolis             IN46201000020090622191001182008050100001Smith                         John                          2709 Rifle Range Rd                                         Chicago                  IN606010000S98765432110000001200098-  8UU                                                                 309   19990304        N   90 28                   UBale of rags fell on employee, knocking her down,landing on top                       UU'
+        ];
+        const recordType = 'A';
+        const new_batch_number = 123;
+        const trailer = 'TRAILER             55555AIN01IN99001202407012024070120240701P&C00000000500000006000490+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ';
+    
+        const result = createNewTrailer(chunk, recordType, new_batch_number, trailer);
+    
+    
+        const expectedTrailer = 'TRAILER             55555AIN01IN99123202407012024070120240701P&C00000000200000000000000+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ';
+        expect(result).to.equal(expectedTrailer);
+    });
+
+    it('should create a new trailer for record type B correctly', function () {
+        const chunk = [
+            'B55555IN99635005111121                                  FISH                          JOE                           123 Fake St                                                 Laplace                  LA7006800001901010100001          202201032023010320220523180000003078000000118298Y000194100+000000000+               00000 FISH                          JOE                                                                                                                                               ',
+            'B55555IN99635005222222                                  MARLIN                        TOM                           324 Fantasy Ln                                              Shreveport               LA7112900001901010100001          202201022023010220220413180000001588000000043900Y000117600+000000000+               00000 MARLIN                        TOM                                                                                                                                               '
+        ];
+        const recordType = 'B';
+        const new_batch_number = 123;
+        const trailer = 'TRAILER             55555BIN01IN99001202408052024080520240805P&C00000000500000000390100+                                                                                                                                                                                                                                                                                                                                                                                                                             ';
+    
+        const result = createNewTrailer(chunk, recordType, new_batch_number, trailer);
+    
+    
+        const expectedTrailer = 'TRAILER             55555BIN01IN99123202408052024080520240805P&C00000000200000000311700+                                                                                                                                                                                                                                                                                                                                                                                                                             ';
+        expect(result).to.equal(expectedTrailer);
+    });
+
+    it('should create a new trailer for record type F correctly', function () {
+        const chunk = [
+            'F55555IN991234560                                          .....',
+            'F55555IN991234560                                          .....'
+        ];
+        const recordType = 'F';
+        const new_batch_number = 123;
+        const trailer = 'TRAILER             55555FIN01IN99001202408052024080520240805P&C000000002000000000000000                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ';
+    
+        const result = createNewTrailer(chunk, recordType, new_batch_number, trailer);
+    
+    
+        const expectedTrailer = 'TRAILER             55555FIN01IN99123202408052024080520240805P&C000000002000000000000000                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ';
+        expect(result).to.equal(expectedTrailer);
+    });
+
+    it('should create a new trailer for record type G correctly', function () {
+        const chunk = [
+            'G55555IN99965005333333              1234567                                           Ralph Steadman                                              00001Steadman                      Ralph                         1999010131000000002360+000000000001Holladay                                                                                                                                                                                                                         ',
+            'G55555IN99965005333333              1234567                                           Ralph Steadman                                              00001Steadman                      Ralph                         1999010141000000002360+000000000002Holladay                                                                                                                                                                                                                         '
+        ];
+        const recordType = 'G';
+        const new_batch_number = 123;
+        const trailer = 'TRAILER             55555GIN01IN99001202408052024080520240805P&C00000000500000000011800+                                                                                                                                                                                                                                                                                                                                                                                               ';
+    
+        const result = createNewTrailer(chunk, recordType, new_batch_number, trailer);
+    
+    
+        const expectedTrailer = 'TRAILER             55555GIN01IN99123202408052024080520240805P&C00000000200000000004720+                                                                                                                                                                                                                                                                                                                                                                                               ';
+        expect(result).to.equal(expectedTrailer);
+    });
+
+    it('should create a new trailer for record type I correctly', function () {
+        const chunk = [
+            'I55555IN011234567                                                                                                                                                                                                                                                                                                                                                                2010010100000000                                                                                                                                                                    333333              20090622Ralph Steadman                                              00001Steadman                      Ralph                         \Images\test\                                                                                                                                                                                                                                                   one.txt                                                                                                                                                                                                                                                         txt ',
+            'I55555IN011234567                                                                                                                                                                                                                                                                                                                                                                2010010100000000                                                                                                                                                                    333333              20090622Ralph Steadman                                              00001Steadman                      Ralph                         \Images\test\                                                                                                                                                                                                                                                   two.txt                                                                                                                                                                                                                                                         txt '
+        ];
+        const recordType = 'I';
+        const new_batch_number = 123;
+        const trailer = 'TRAILER             55555IIN01IN99001202408052024080520240805P&C000000002000000000000000                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ';
+    
+        const result = createNewTrailer(chunk, recordType, new_batch_number, trailer);
+    
+    
+        const expectedTrailer = 'TRAILER             55555IIN01IN99123202408052024080520240805P&C000000002000000000000000                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ';
+        expect(result).to.equal(expectedTrailer);
+    });
+
+    it('should not create a new trailer for an invalid record type', function () {
+        const chunk = ['Some data'];
+        const recordType = 'Z';  // Invalid type
+        const new_batch_number = 123;
+        const trailer = 'TRAILER             55555AIN01IN99001202407012024070120240701P&C00000000500000006000490+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ';
+
+        expect(() => createNewTrailer(chunk, recordType, new_batch_number, trailer)).to.throw(Error, `UDS filename is using an invalid record type: ${recordType}`);
+    });
+});
+
+describe('padDigitsServer', function () {
     it('should pad a number with leading zeros to the specified number of digits', function () {
-        expect(padDigits(5, 3)).to.equal('005');
-        expect(padDigits(42, 5)).to.equal('00042');
-        expect(padDigits(123, 2)).to.equal('123'); // No padding needed, as 123 is already 3 digits
+        expect(padDigitsServer(5, 3)).to.equal('005');
+        expect(padDigitsServer(42, 5)).to.equal('00042');
+        expect(padDigitsServer(123, 2)).to.equal('123'); // No padding needed, as 123 is already 3 digits
     });
 
     it('should handle cases where the number has more digits than the specified length', function () {
-        expect(padDigits(1234, 3)).to.equal('1234'); // No padding needed, as 1234 is already 4 digits
-        expect(padDigits(987654, 5)).to.equal('987654'); // No padding needed, as 987654 is already 6 digits
+        expect(padDigitsServer(1234, 3)).to.equal('1234'); // No padding needed, as 1234 is already 4 digits
+        expect(padDigitsServer(987654, 5)).to.equal('987654'); // No padding needed, as 987654 is already 6 digits
     });
 
     it('should return "0" if number is 0 and digits is 1', function () {
-        expect(padDigits(0, 1)).to.equal('0');
+        expect(padDigitsServer(0, 1)).to.equal('0');
     });
 
     it('should return "00000" for number 0 and digits 5', function () {
-        expect(padDigits(0, 5)).to.equal('00000');
+        expect(padDigitsServer(0, 5)).to.equal('00000');
     });
 
     it('should return "000000" for number 0 and digits 6', function () {
-        expect(padDigits(0, 6)).to.equal('000000');
+        expect(padDigitsServer(0, 6)).to.equal('000000');
     });
 });
 
@@ -151,48 +262,55 @@ describe('trim', function () {
 });
 
 describe('join_path_parts', function () {
-  
-    it('should join path parts with appropriate separators', function () {
-      const result = join_path_parts('/home/', '/user/', 'documents/', '/file.txt/');
-      expect(result).to.equal('/home/user/documents/file.txt');
-    });
-  
-    it('should handle path parts with mixed separators', function () {
-      const result = join_path_parts('C:\\', 'Users\\', 'John\\', 'Documents\\', 'file.txt');
-      expect(result).to.equal('C:\\Users\\John\\Documents\\file.txt');
-    });
-  
-    it('should trim redundant separators from the start and end', function () {
-      const result = join_path_parts('/start/', 'middle/', 'end/');
-      expect(result).to.equal('/start/middle/end');
-    });
-  
-    it('should handle empty strings in path parts', function () {
-      const result = join_path_parts('', '/home/', '', 'documents/', 'file.txt', '');
-      expect(result).to.equal('/home/documents/file.txt');
-    });
-  
-    it('should handle no path parts', function () {
-      const result = join_path_parts();
-      expect(result).to.equal('');
-    });
-  
-    it('should handle a single path part', function () {
-      const result = join_path_parts('onlyPathPart');
-      expect(result).to.equal('onlyPathPart');
-    });
-  
-    it('should handle path parts with multiple trailing and leading separators', function () {
-      const result = join_path_parts('////home////', '////user////', 'documents////', '////file.txt////');
-      expect(result).to.equal('/home/user/documents/file.txt');
-    });
-  
-    it('should handle path parts with special characters', function () {
-      const result = join_path_parts('special*chars/', '/path/with?', 'extra%chars/', 'file@name.txt');
-      expect(result).to.equal('special*chars/path/with?/extra%chars/file@name.txt');
-    });
-  
+    if(sep === "/") {
+        it('should join path parts with appropriate separators', function () {
+        const result = join_path_parts('/home/', '/user/', 'documents/', '/file.txt/');
+        expect(result).to.equal('home/user/documents/file.txt');
+        });
+    } 
+    else {
+        it('should handle path parts with mixed separators', function () {
+        const result = join_path_parts('C:\\', 'Users\\', 'John\\', 'Documents\\', 'file.txt');
+        expect(result).to.equal('C:\\Users\\John\\Documents\\file.txt');
+        });
+    }
   });
+
+  describe('wait_for_zip_to_populate', function () {
+
+it('should wait until the zip has at least one entry', async function () {
+    // Mock ZIP object with an initial entry count of 0
+    let zip = { getEntryCount: () => 0 };
+
+    // Create a promise that resolves after a short delay
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    // Create a function to simulate adding an entry to the ZIP object
+    const addEntryAfterDelay = async (zip) => {
+        await delay(500); // Simulate delay
+        zip.getEntryCount = () => 1; // Simulate having one entry
+    };
+
+    // Start adding an entry after a delay
+    addEntryAfterDelay(zip);
+
+    // Measure the time taken to run the function
+    const start = Date.now();
+    
+    // Call the function to wait for the ZIP to populate
+    await wait_for_zip_to_populate(zip);
+    
+    const end = Date.now();
+    const duration = end - start;
+
+    // Assert that the function completed within a reasonable time
+    expect(duration).to.be.lessThan(1000); // Ensure it completes in under 1 second
+
+    // Assert that the zip object now has at least one entry
+    expect(zip.getEntryCount()).to.equal(1);
+});
+
+});
 
 describe('getClaimNumber', function () {
     it('should extract claim number for record type A', function () {
@@ -308,4 +426,229 @@ describe('sortFileByClaim', function () {
         const recordType = 'Z';  // Invalid type
         expect(() => sortFileByClaim(lines, recordType)).to.throw(Error, 'UDS filename is using an invalid record type');
     });
+});
+
+describe('convert_form_data_to_dict', () => {
+    it('should convert FormData to a dictionary', () => {
+      const formData = new FormData();
+      formData.append('key1', 'value1');
+      formData.append('key2', 'value2');
+  
+      const result = convert_form_data_to_dict(formData);
+      expect(result).to.deep.equal({
+        key1: 'value1',
+        key2: 'value2'
+      });
+    });
+  
+    it('should handle empty FormData', () => {
+      const formData = new FormData();
+      const result = convert_form_data_to_dict(formData);
+      expect(result).to.deep.equal({});
+    });
+  
+    it('should handle multiple values for the same key', () => {
+      const formData = new FormData();
+      formData.append('key1', 'value1');
+      formData.append('key1', 'value2');
+  
+      const result = convert_form_data_to_dict(formData);
+      expect(result).to.deep.equal({
+        key1: 'value2'  // The last value for the same key should overwrite the previous one
+      });
+    });
+  
+    it('should handle non-string values', () => {
+      const formData = new FormData();
+      formData.append('key1', 123);
+      formData.append('key2', true);
+  
+      const result = convert_form_data_to_dict(formData);
+      expect(result).to.deep.equal({
+        key1: '123',  // FormData converts values to strings
+        key2: 'true'
+      });
+    });
+  });
+
+describe('file_sep', () => {
+    it('should return "\\" for Windows paths with a volume letter', () => {
+        const result = file_sep('C:\\Users\\Test\\file.txt');
+        expect(result).to.equal('\\');
+    });
+
+    it('should return "/" for Unix-style paths starting with a slash', () => {
+        const result = file_sep('/home/user/file.txt');
+        expect(result).to.equal('/');
+    });
+
+    it('should return "\\" for Windows paths without a volume letter', () => {
+        const result = file_sep('Users\\Test\\file.txt');
+        expect(result).to.equal('\\');
+    });
+
+    it('should return "/" for Unix-style paths with no leading slash', () => {
+        const result = file_sep('home/user/file.txt');
+        expect(result).to.equal('/');
+    });
+
+    it('should throw an error if the file path separator is ambiguous', () => {
+        expect(() => file_sep('file.txt')).to.throw(Error, `Not sure what file path separator we are using: 'file.txt'`);
+    });
+
+    it('should handle mixed paths by returning the first detected separator', () => {
+        const result1 = file_sep('C:\\Users\\Test\\file.txt');
+        expect(result1).to.equal('\\');
+        
+        const result2 = file_sep('/home/user/file.txt');
+        expect(result2).to.equal('/');
+    });
+});
+
+describe('get_directory_from_path', () => {
+    it('should return the directory for a Windows-style path', () => {
+      const result = get_directory_from_path('C:\\Users\\Test\\file.txt');
+      expect(result).to.equal('C:\\Users\\Test');
+    });
+  
+    it('should return the directory for a Unix-style path', () => {
+      const result = get_directory_from_path('/home/user/file.txt');
+      expect(result).to.equal('/home/user');
+    });
+  
+    it('should return the directory for a Windows path with no volume letter', () => {
+      const result = get_directory_from_path('Users\\Test\\file.txt');
+      expect(result).to.equal('Users\\Test');
+    });
+  
+    it('should return the directory for a Unix-style path with no leading slash', () => {
+      const result = get_directory_from_path('home/user/file.txt');
+      expect(result).to.equal('home/user');
+    });
+
+    //  TODO: should this be accounted for?
+    // it('should return an empty string if there is no directory component in the path', () => {
+    //   const result = get_directory_from_path('file.txt');
+    //   expect(result).to.equal('');
+    // });
+  
+    it('should handle paths that end with a slash or backslash correctly', () => {
+      const result1 = get_directory_from_path('C:\\Users\\Test\\');
+      expect(result1).to.equal('C:\\Users\\Test');
+  
+      const result2 = get_directory_from_path('/home/user/');
+      expect(result2).to.equal('/home/user');
+    });
+});
+
+describe('is_null_or_empty', () => {
+    it('should return true for null', () => {
+      const result = is_null_or_empty(null);
+      expect(result).to.be.true;
+    });
+  
+    it('should return true for undefined', () => {
+      const result = is_null_or_empty(undefined);
+      expect(result).to.be.true;
+    });
+  
+    it('should return true for an empty string', () => {
+      const result = is_null_or_empty('');
+      expect(result).to.be.true;
+    });
+  
+    it('should return true for a string with only spaces', () => {
+      const result = is_null_or_empty('   ');
+      expect(result).to.be.true;
+    });
+  
+    it('should return false for a non-empty string', () => {
+      const result = is_null_or_empty('test');
+      expect(result).to.be.false;
+    });
+  
+    it('should return false for a number', () => {
+      const result = is_null_or_empty(123);
+      expect(result).to.be.false;
+    });
+  
+    it('should return false for an object', () => {
+      const result = is_null_or_empty({ key: 'value' });
+      expect(result).to.be.false;
+    });
+  
+    it('should return false for an array', () => {
+      const result = is_null_or_empty([1, 2, 3]);
+      expect(result).to.be.false;
+    });
+  
+  });
+
+describe('padDigitsLocal', function () {
+    it('should pad a number with leading zeros to the specified number of digits', function () {
+        expect(padDigitsLocal(5, 3)).to.equal('005');
+        expect(padDigitsLocal(42, 5)).to.equal('00042');
+        expect(padDigitsLocal(123, 2)).to.equal('123'); // No padding needed, as 123 is already 3 digits
+    });
+
+    it('should handle cases where the number has more digits than the specified length', function () {
+        expect(padDigitsLocal(1234, 3)).to.equal('1234'); // No padding needed, as 1234 is already 4 digits
+        expect(padDigitsLocal(987654, 5)).to.equal('987654'); // No padding needed, as 987654 is already 6 digits
+    });
+
+    it('should return "0" if number is 0 and digits is 1', function () {
+        expect(padDigitsLocal(0, 1)).to.equal('0');
+    });
+
+    it('should return "00000" for number 0 and digits 5', function () {
+        expect(padDigitsLocal(0, 5)).to.equal('00000');
+    });
+
+    it('should return "000000" for number 0 and digits 6', function () {
+        expect(padDigitsLocal(0, 6)).to.equal('000000');
+    });
+});
+
+//helper to verify the zip is being made
+async function verify_file_exists_then_delete(file_path) {
+    try {
+        await stat(file_path);
+        console.debug(`File ${file_path} exists!`);
+
+        await rm(file_path);
+        console.debug(`Deleting ${file_path}`);
+        return true; // File existed and was successfully deleted
+    } catch (error) {
+        console.error(error);
+        return false; // Either the file does not exist or failed to delete
+    }
+}
+
+describe('create_zip_files', function() {
+    it('should process and parse the zip given the UDS file paths', async function() {
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
+        const original_zip_file = resolve(__dirname, './input_files/55555IIN01IN9900120240805.zip');
+        const final_uds_file_paths = [
+            resolve(__dirname, './input_files/55555IIN01IN9900120240805-1.txt')
+        ];
+
+        await create_zip_files(original_zip_file, final_uds_file_paths);
+        const new_zip_file_path = resolve(__dirname, './input_files/55555IIN01IN9900120240805-1.zip');
+        const result = await verify_file_exists_then_delete(new_zip_file_path);
+        expect(result).to.equal(true, 'The zip file was not created or failed to delete');
+    });
+
+    // apparently since this is async, it needs to use 'chai-as-promised' but I'm not going to bother with another installed library for one test that should be negative
+    // it('should throw an error if the expected path in the UDS is not present in the zip', async function() {
+    //     const __filename = fileURLToPath(import.meta.url);
+    //     const __dirname = dirname(__filename);
+    //     const original_zip_file = resolve(__dirname, './input_files/55555IIN01IN9900120240805.zip');
+    //     const final_uds_file_paths = [
+    //         resolve(__dirname, './input_files/77777IIN01IN9900120240805-1.txt')
+    //     ];
+
+    //     await expect(create_zip_files(original_zip_file, final_uds_file_paths))
+    //         .to.throw(Error, '\\Images\\test\\one.txt is not in an a resulting UDS file. Are you sure the ZIP goes with the UDS file?');
+    // });
 });

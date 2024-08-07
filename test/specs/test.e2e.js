@@ -40,7 +40,7 @@ describe('Electron Testing', () => {
 
     it('should select the input file', async () => {
         // Resolve the file path using Node.js
-        const filePath = path.resolve(__dirname, 'test/input_files/55555AIN01IN9900120240701 (1).txt');
+        const filePath = path.resolve(__dirname, '../input_files/55555AIN01IN9900120240701 (1).txt');
 
         // Use browser.execute to set the file path in the browser context
         await browser.execute((filePath) => {
@@ -54,7 +54,7 @@ describe('Electron Testing', () => {
 
     it('should select the output folder', async () => {
         const outputFolder = await browser.$('#output-directory');
-        const outputFolderPath = path.resolve(__dirname, 'test/output_files');
+        const outputFolderPath = path.resolve(__dirname, '../output_files');
         await outputFolder.setValue(outputFolderPath);
         const outputFolderValue = await outputFolder.getValue();
         expect(outputFolderValue).toEqual(outputFolderPath);
@@ -116,8 +116,8 @@ describe('Electron Testing', () => {
     it("A Record file should exist", async() => {
         await new Promise(resolve => setTimeout(resolve, 200))
 
-        verify_file_exists_then_delete(path.join(__dirname, 'test/output_files/55555AIN01IN9900520240701 (1)-1.txt'))
-        verify_file_exists_then_delete(path.join(__dirname, 'test/output_files/55555AIN01IN9900620240701 (1)-2.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555AIN01IN9900520240701 (1)-1.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555AIN01IN9900620240701 (1)-2.txt'))
     })
 })
 

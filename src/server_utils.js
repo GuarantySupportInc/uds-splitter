@@ -35,9 +35,7 @@ function createNewTrailer(chunk, recordType, new_batch_number, trailer) {
       break;
     case 'F':
       //has been validated that it is working as expected
-      const chunkLength = chunk.length;
-      const newTrailerVal = chunkLength.toString().padStart(9, '0');
-      newTrailer = trailer.substring(0,64) + newTrailerVal + trailer.substring(73);
+      newTrailer = trailer.substring(0,64) + chunk.length.toString().padStart(9, '0') + trailer.substring(73);
       break;
     case 'G':
       for (let i = 0; i < chunk.length; i++) {
@@ -47,7 +45,7 @@ function createNewTrailer(chunk, recordType, new_batch_number, trailer) {
       newTrailer = trailer.substring(0, 64) + chunk.length.toString().padStart(9, '0') + convertFloatToUDSCurrency(totalAmount) + trailer.substring(88);
       break;
     case 'I':
-      // Add your logic for type I here
+      newTrailer = trailer.substring(0,64) + chunk.length.toString().padStart(9, '0') + trailer.substring(73);
       break;
     default:
       throw new Error(`UDS filename is using an invalid record type: ${recordType}`)
@@ -55,7 +53,7 @@ function createNewTrailer(chunk, recordType, new_batch_number, trailer) {
 
   // Fix Batch Number
   // Header and Trailer have same Batch Number positions.
-  newTrailer = trailer.substring(0, 34) + padDigits(new_batch_number,3) + trailer.substring(37)
+  newTrailer = newTrailer.substring(0, 34) + padDigits(new_batch_number,3) + newTrailer.substring(37)
 
   return newTrailer;
 }
@@ -202,8 +200,14 @@ function trim(string, character) {
  * @returns {string}
  */
 function join_path_parts(...args) {
-  args.forEach((arg, index) => args[index] = trim(arg, path.sep))
-
+  let otherSep
+  if (path.sep === "/") {
+    otherSep = "\\"
+  }
+  else{
+    otherSep = "/"
+  }
+  args.forEach((arg, index) => args[index] = trim(arg.replaceAll(otherSep, path.sep), path.sep))
   return args.join(path.sep)
 }
 
@@ -227,7 +231,6 @@ async function wait_for_zip_to_populate(zip) {
  * @param final_uds_file_paths list of full paths
  */
 async function create_zip_files(original_zip_file, final_uds_file_paths) {
-
   let zip = new AdmZip(original_zip_file, {})
 
   let file_map = {
@@ -254,16 +257,14 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
 
     for await (const line of reader) {
       if(line.startsWith("HEADER") || line.startsWith("TRAILER"))
-          continue
+        continue
 
       if(line === "")
         continue
 
       let document_path = line.substring(702, 958).trim() // Assuming perfect UDS
       let file_name = line.substring(958, 1214).trim()
-
-      let full_path = "\\" + join_path_parts(document_path, file_name).replace("/", "\\")
-
+      let full_path = "\\" + join_path_parts(document_path, file_name).replaceAll("/", "\\")
       if (!(full_path in file_map)) {
         file_map[full_path] = new Set([path])
       } else {
@@ -333,5 +334,6 @@ module.exports = {
   join_path_parts,
   createNewHeader,
   create_zip_files,
-  trim
+  trim,
+  wait_for_zip_to_populate
 };
