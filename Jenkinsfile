@@ -10,10 +10,6 @@ pipeline {
         SNYK_TOKEN = credentials('snyk')
         SNYK_CFG_ORG = 'guaranty-support-inc'
 
-        // https://www.electronjs.org/docs/latest/tutorial/testing-on-headless-ci
-        // https://stackoverflow.com/a/40678605
-        DISPLAY = '1'
-
         POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"').trim()
     }
 
@@ -41,6 +37,11 @@ pipeline {
             }
         }
         stage('Test') {
+            environment {
+                // https://www.electronjs.org/docs/latest/tutorial/testing-on-headless-ci
+                // https://stackoverflow.com/a/40678605
+                DISPLAY = '1'
+            }
             steps {
                 script {
                     sh 'npm test'
