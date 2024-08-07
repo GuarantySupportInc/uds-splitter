@@ -10,5 +10,5 @@ current_commit=$(git log -1 | sed -n "s/^commit //p")
 gh api --method POST "/repos/GuarantySupportInc/uds-splitter/statuses/${current_commit}" \
                            -H "Accept: application/vnd.github+json" \
                            -f "state=${current_state}" \
-                           -f "description=${BUILD_NUMBER} - ${current_description}" \
+                           -f "description=${current_description}" \
                            -f "context=continuous-integration/jenkins"
