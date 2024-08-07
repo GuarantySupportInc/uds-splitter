@@ -5,14 +5,6 @@ pipeline {
         skipStagesAfterUnstable()
     }
 
-    environment {
-        // SNYK
-        SNYK_TOKEN = credentials('snyk')
-        SNYK_CFG_ORG = 'guaranty-support-inc'
-
-        POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"').trim()
-    }
-
     stages {
 		stage('Setup') {
             steps {
@@ -25,6 +17,9 @@ pipeline {
             }
         }
         stage('Install') {
+            environment {
+                POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"').trim()
+            }
             steps {
                 script {
                     sh 'npm ci'
@@ -50,6 +45,11 @@ pipeline {
             }
         }
         stage('Scan') {
+            environment {
+                // SNYK
+                SNYK_TOKEN = credentials('snyk')
+                SNYK_CFG_ORG = 'guaranty-support-inc'
+            }
             steps {
                 script {
                     sh 'snyk.sh auth ${SNYK_TOKEN}'
