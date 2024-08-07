@@ -101,12 +101,14 @@ ipcMain.on('submitted-form', (event, formData) => {
   });
 
   progressWindow.loadFile(path.join(__dirname, 'progress.html'));
+  console.debug('Record type:', recordType);
   fs.readFile(formData["chosen-file"], 'utf-8', async (err, data) => {
     if (err) {
+      console.error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
       throw new Error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
     }
-
-    const lines = data.split('\n');
+    console.info('File read successfully.');
+    const lines = data.split('\r\n');
 
     const header = lines.shift();
     let trailer = lines.pop();
@@ -143,7 +145,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       let new_batch_number = parseInt(startingBatchNumber) + fileIndex - 1 // Starting at 1, so need to move the number left
       const chunk = sortedLines.slice(i, endIndex);
       const newTrailer = createNewTrailer(chunk, recordType, new_batch_number, trailer);
-      const newHeader = createNewHeader(chunk, recordType, new_batch_number, header)
+      const newHeader = createNewHeader(new_batch_number, header)
       const fileContent = [newHeader, ...chunk, newTrailer].join('\r\n') + '\r\n';
       const new_file_name = swap_batch_number_in_file_name(file_name, new_batch_number)
 
@@ -158,6 +160,7 @@ ipcMain.on('submitted-form', (event, formData) => {
 
       let progress = Math.round(((i + linesPerFile) / numberOfLinesInFile) * 100);  //progress is kinda difficult to calc with this method since we're not using two loops.. this is basically just saying when a file is done.. maybe can keep track of chunk len outside the loop
       progressWindow.webContents.send('progress-update', progress);
+      console.debug(`Writing file ${new_file_path}...`);
       fs.writeFile(new_file_path, fileContent, (writeErr) => {
         if (writeErr) {
           throw new Error(`There was an error writing to ${new_file_path}: ${writeErr.message}`)
@@ -187,6 +190,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');
     }
   });
+  console.debug('End')
   // progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');  #when done
 });
 
