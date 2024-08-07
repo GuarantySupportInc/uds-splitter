@@ -1,7 +1,7 @@
 {
   "name": "uds-splitter",
   "productName": "UDS Splitter Utility",
-  "executableName": "UDSSplitterUtility",
+  "executableName": "uds-splitter",
   "version": "1.0.0",
   "description": "This utility is designed to accept a UDS 2.0-compliant text file and modify its size by splitting it into more consumable pieces before importing into a Claim System.",
   "main": "src/index.js",
