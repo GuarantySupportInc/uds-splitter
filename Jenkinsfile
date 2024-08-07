@@ -37,7 +37,7 @@ pipeline {
                     sh 'git tag -a "v$(date +%Y.%m.%d)" -m "Version $(date +%Y.%m.%d)"'
                     sh 'npm --no-git-tag-version version'
                     sh 'npm version from-git'
-                    sh 'npx electron-forge make'
+                    sh 'npm run make -- --platform win32'
                 }
             }
         }
