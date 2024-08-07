@@ -53,7 +53,10 @@ exports.config = {
         browserName: 'electron',
         // Electron service options
         // see https://webdriver.io/docs/desktop-testing/electron/configuration/#service-options
-        appArgs: ['--headless']
+        'wdio:electronServiceOptions': {
+            // custom application args
+            appArgs: []
+        }
     }],
 
     //
