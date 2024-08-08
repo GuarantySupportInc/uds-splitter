@@ -11,4 +11,4 @@ gh api --method POST "/repos/GuarantySupportInc/uds-splitter/statuses/${current_
                            -H "Accept: application/vnd.github+json" \
                            -f "state=${current_state}" \
                            -f "description=${current_description}" \
-                           -f "context=continuous-integration/jenkins"
+                           -f "context=Jenkins"
