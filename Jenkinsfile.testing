@@ -67,7 +67,7 @@ pipeline {
     }
     post {
         success {
-            sh 'build/notify-github.sh "success" "Success - build was successful"'
+            sh 'build/notify-github.sh "success" "Success - testing was successful"'
         }
         failure {
             sh 'build/notify-github.sh "failure" "Failure - testing has failed"'
