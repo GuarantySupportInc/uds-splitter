@@ -24,27 +24,29 @@ solve this problem by making the split process easy while still making the new f
 | 3rd-Party Verified | Another party outside GSI has confirmed the feature works |
 
 
-| Feature                              | Implementation     | Unit Testing       | 3rd-Party Verified |
-|--------------------------------------|--------------------|--------------------|--------------------|
-| Split A Record                       | :white_check_mark: | :pencil2:          | :x:                |
-| Split F Record                       | :white_check_mark: | :pencil2:          | :x:                |
-| Split G Record                       | :white_check_mark: | :pencil2:          | :x:                |
-| Split I Record                       | :pencil2:          | :x:                | :x:                |
-| Split M Record                       | :x:                | :x:                | :x:                |
-| Split B Record                       | :white_check_mark: | :pencil2:          | :x:                |
-| Split C Record                       | :x:                | :x:                | :x:                |
-| Split D Record                       | :x:                | :x:                | :x:                |
-| Keep claims together during split    | :white_check_mark: | :pencil2:          | :x:                |
-| Logging to file                      | :x:                | :x:                | :x:                |
-| Automated Builds                     | :x:                | :x:                | :x:                |
-| Windows Code Signing Certificate     | :x:                | :x:                | :x:                |
-| Apple Code Signing Certificate       | :x:                | :x:                | :x:                |
-| Automatic Record Type Detection      | :white_check_mark: | :white_check_mark: | :x:                |
-| Progress Bar                         | :white_check_mark: | :pencil2:          | :x:                |
-| Open Folder on Complete              | :white_check_mark: | :white_check_mark: | :x:                |
-| Ability to save settings             | :x:                | :x:                | :x:                |
-| 'Help' links in menubar              | :x:                | :x:                | :x:                |
-| Downloadable installation executable | :x:                | :x:                | :x:                |
+| Feature                                        | Implementation     | Unit Testing       | 3rd-Party Verified |
+|------------------------------------------------|--------------------|--------------------|--------------------|
+| Split A Record                                 | :white_check_mark: | :white_check_mark: | :x:                |
+| Split F Record                                 | :white_check_mark: | :white_check_mark: | :x:                |
+| Split G Record                                 | :white_check_mark: | :white_check_mark: | :x:                |
+| Split I Record                                 | :white_check_mark: | :white_check_mark: | :x:                |
+| Split M Record                                 | :x:                | :x:                | :x:                |
+| Split B Record                                 | :white_check_mark: | :white_check_mark: | :x:                |
+| Split C Record                                 | :x:                | :x:                | :x:                |
+| Split D Record                                 | :x:                | :x:                | :x:                |
+| Keep claims together during split              | :white_check_mark: | :white_check_mark: | :x:                |
+| Logging to file                                | :x:                | :x:                | :x:                |
+| GitHub Checks integration for /dev and /master | :white_check_mark: | :x:                | :x:                |
+| Windows Code Signing Certificate               | :x:                | :x:                | :x:                |
+| Apple Code Signing Certificate                 | :x:                | :x:                | :x:                |
+| Automatic Record Type Detection                | :white_check_mark: | :white_check_mark: | :x:                |
+| Progress Bar                                   | :white_check_mark: | :white_check_mark: | :x:                |
+| Open Folder on Complete                        | :white_check_mark: | :white_check_mark: | :x:                |
+| Ability to save settings                       | :x:                | :x:                | :x:                |
+| 'Help' links in menubar                        | :white_check_mark: | :white_check_mark: | :x:                |
+| Downloadable installation executable           | :x:                | :x:                | :x:                |
+| User Manual                                    | :white_check_mark: | :white_check_mark: | :x:                |
+
 
 ## Notes from the team (August 2nd, 2024)
 We are currently in the process of getting automated unit testing in place for A/F/G/M/B. I Records are in progress
