@@ -4,6 +4,10 @@ pipeline {
     options {
         skipStagesAfterUnstable()
     }
+        
+    environment {
+        GITHUB_TOKEN = sh(returnStdout: true, script: 'gh auth token')
+    }
 
     stages {
 		stage('Setup') {
@@ -65,9 +69,6 @@ pipeline {
             }
         }
         stage('Remote Build') {
-            environment {
-                GITHUB_TOKEN = sh(returnStdout: true, script: 'gh auth token')
-            }
             steps {
                 script {
                     sh 'build/notify-github.sh "pending" "Publishing"'
