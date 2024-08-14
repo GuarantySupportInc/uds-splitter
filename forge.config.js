@@ -54,6 +54,7 @@ module.exports = {
   publishers: [
     {
       name: "@electron-forge/publisher-github",
+      platforms: ['win32', 'linux'],
       config: {
         repository: {
           owner: "GuarantySupportInc",
