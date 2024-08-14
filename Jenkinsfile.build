@@ -12,10 +12,6 @@ pipeline {
                     env.GIT_LOCAL_BRANCH = get_git_branch(env.GIT_BRANCH)
                 }
 
-                withEnv(["GITHUB_TOKEN=" + sh(returnStdout: true, script: 'gh auth token')]) {
-                    sh 'echo ${GITHUB_TOKEN}'
-                }
-
                 sh 'chmod +x build/*.sh'
                 sh 'az login --identity'
                 sh 'gh auth status'
@@ -74,7 +70,7 @@ pipeline {
                     sh 'build/notify-github.sh "pending" "Publishing"'
                     sh 'git push origin "v$(date +%Y.%m.%d)"'
 
-                    withEnv(["GITHUB_TOKEN=" + sh(returnStdout: true, script: 'gh auth token')]) {
+                    withEnv(["GITHUB_RELEASE_TOKEN=" + sh(returnStdout: true, script: 'gh auth token')]) {
                         sh 'npm run publish'
                     }
                 }
