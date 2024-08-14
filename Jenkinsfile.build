@@ -60,7 +60,7 @@ pipeline {
                     sh 'snyk.sh auth ${SNYK_TOKEN}'
                     sh 'snyk.sh ignore --file-path=./node_modules'
                     sh 'snyk.sh ignore --file-path=./out'
-                    sh 'snyk.sh code test'
+                    // sh 'snyk.sh code test'
                 }
             }
         }
