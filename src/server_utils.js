@@ -278,8 +278,8 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
 
     // Zip Slip prevention https://security.snyk.io/research/zip-slip-vulnerability
     let zip_base_directory = original_zip_file.substring(0, original_zip_file.lastIndexOf(path.sep));
-    let potential_entry = path.join(zip_base_directory, entry.entryName)
-    if(potential_entry.indexOf(path.join(zip_base_directory, path.sep)) !== 0) {
+    let potential_entry = path.resolve(zip_base_directory, entry.entryName)
+    if(!potential_entry.startsWith(zip_base_directory)) {
       throw new Error("Zip Slip abuse detected. See link for details: https://security.snyk.io/research/zip-slip-vulnerability.")
     }
 
