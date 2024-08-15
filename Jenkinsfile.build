@@ -62,8 +62,6 @@ pipeline {
                 script {
                     sh 'build/notify-github.sh "pending" "Synk Scan"'
                     sh 'snyk.sh auth ${SNYK_TOKEN}'
-                    sh 'snyk.sh ignore --file-path=./node_modules'
-                    sh 'snyk.sh ignore --file-path=./out'
                     sh 'snyk.sh test'
                     // sh 'snyk.sh code test'
                 }
