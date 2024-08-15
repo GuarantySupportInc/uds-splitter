@@ -54,13 +54,12 @@ module.exports = {
   publishers: [
     {
       name: "@electron-forge/publisher-github",
-      platforms: ['win32', 'linux'],
       config: {
         repository: {
           owner: "GuarantySupportInc",
           name: "uds-splitter"
         },
-        prerelease: true,
+        prerelease: false,
         draft: true,
         generateReleaseNotes: true,
       }
