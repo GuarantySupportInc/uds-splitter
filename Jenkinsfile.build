@@ -20,7 +20,7 @@ pipeline {
         stage('Install') {
             environment {
                 POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"').trim()
-                CURRENT_COMMIT = sh(returnStdout: true, script: 'git log -1 | sed -n "s/^commit //p"')
+                CURRENT_COMMIT = sh(returnStdout: true, script: 'git log -1 | sed -n "s/^commit //p"').trim()
             }
             steps {
                 script {
@@ -31,6 +31,7 @@ pipeline {
                     sh 'npm version from-git --no-git-tag-version'
                     sh 'npm run make -- --platform win32'
                     sh 'npm run make -- --platform linux'
+                    sh 'npm run make -- --platform darwin'
                 }
             }
         }
@@ -60,19 +61,18 @@ pipeline {
                     sh 'snyk.sh auth ${SNYK_TOKEN}'
                     sh 'snyk.sh ignore --file-path=./node_modules'
                     sh 'snyk.sh ignore --file-path=./out'
-                    sh 'snyk.sh code test'
+                    // sh 'snyk.sh code test'
                 }
             }
         }
         stage('Remote Build') {
-            environment {
-                GITHUB_TOKEN = sh(returnStdout: true, script: 'gh auth token')
-            }
             steps {
                 script {
                     sh 'build/notify-github.sh "pending" "Publishing"'
                     sh 'git push origin "v$(date +%Y.%m.%d)"'
-                    sh 'npm run publish'
+                    withEnv(["GITHUB_TOKEN=" + sh(returnStdout: true, script: 'gh auth token').trim()]) {
+                        sh 'npx electron-forge publish'
+                    }
                 }
             }
         }

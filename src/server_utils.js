@@ -275,6 +275,16 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
 
   // Determine where this entry to should go in the resulting uds files
   zip.getEntries("").forEach((entry) => {
+
+    let entry_name = entry.entryName;
+
+    // Zip Slip prevention https://security.snyk.io/research/zip-slip-vulnerability
+    let zip_base_directory = original_zip_file.substring(0, original_zip_file.lastIndexOf(path.sep));
+    let potential_entry = path.resolve(zip_base_directory, entry_name)
+    if(!potential_entry.startsWith(zip_base_directory)) {
+      throw new Error("Zip Slip abuse detected. See link for details: https://security.snyk.io/research/zip-slip-vulnerability.")
+    }
+
     // "\\Images\\test\\somefile.txt"
     let uds_version_of_entry = `\\${trim(entry.entryName, '\\').replaceAll("/", "\\")}`
 
@@ -287,7 +297,7 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
 
     console.debug(`Processing ZIP entry: ${entry.entryName}`)
 
-    zip.readFileAsync(entry, (data, err) => {
+    zip.readFileAsync(entry_name, (data, err) => {
 
       if(err)
         throw new Error(`Something went wrong when reading ZIP Entry '${entry.entryName}' from '${original_zip_file}'`)

@@ -59,7 +59,7 @@ module.exports = {
           owner: "GuarantySupportInc",
           name: "uds-splitter"
         },
-        prerelease: true,
+        prerelease: false,
         draft: true,
         generateReleaseNotes: true,
       }

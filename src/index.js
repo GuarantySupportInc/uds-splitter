@@ -1,7 +1,7 @@
 'use strict';
 
 const { createNewTrailer, sortFileByClaim, getClaimNumber, swap_batch_number_in_file_name, join_path_parts, createNewHeader, create_zip_files } = require('./server_utils');
-const { app, ipcMain, BrowserWindow, dialog, shell } = require('electron');
+const { app, ipcMain, BrowserWindow, dialog, shell, Menu, MenuItem } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -37,6 +37,31 @@ const createWindow = () => {
       nodeIntegration: false
     }
   });
+
+  mainWindow.setMenu(Menu.buildFromTemplate([
+    {
+      label: 'Help',
+      submenu: [
+        { role: 'help', label: "Product Page", click: async () => {
+          const { shell } = require('electron');
+          await shell.openExternal("https://www.guarantysupport.com/uds-splitter-utility/")
+        } },
+        { role: 'help', label: "Source Code", click: async () => {
+          const { shell } = require('electron');
+          await shell.openExternal("https://github.com/GuarantySupportInc/uds-splitter")
+        } },
+        { role: 'help', label: "License", click: async () => {
+          const { shell } = require('electron');
+          await shell.openExternal("https://github.com/GuarantySupportInc/uds-splitter/blob/master/LICENSE")
+        } },
+        { role: 'help', label: "Manual", click: async () => {
+          const { shell } = require('electron');
+          await shell.openExternal("https://www.guarantysupport.com/uds-splitter-utility/#user-manual")
+        } },
+
+      ]
+    }
+  ]))
 
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
@@ -236,6 +261,10 @@ ipcMain.on('open-zip-file-dialog', (event) => {
   } else {
       event.sender.send('selected-zip-file', 'canceled');
   }
+});
+
+ipcMain.on("get-app-version", (event) => {
+  event.returnValue = app.getVersion();
 });
 
 ipcMain.on('cancel-processing', (event) => {
