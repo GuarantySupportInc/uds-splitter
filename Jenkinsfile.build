@@ -69,8 +69,8 @@ pipeline {
                 script {
                     sh 'build/notify-github.sh "pending" "Publishing"'
                     sh 'git push origin "v$(date +%Y.%m.%d)"'
-                    withEnv(["GITHUB_ACCESS_TOKEN=" + sh(returnStdout: true, script: 'gh auth token')]) {
-                        sh 'npx electron-forge publish --auth-token=${GITHUB_ACCESS_TOKEN}'
+                    withEnv(["GITHUB_TOKEN=" + sh(returnStdout: true, script: 'gh auth token')]) {
+                        sh 'npx electron-forge publish'
                     }
                 }
             }
