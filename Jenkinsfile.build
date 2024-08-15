@@ -31,6 +31,7 @@ pipeline {
                     sh 'npm version from-git --no-git-tag-version'
                     sh 'npm run make -- --platform win32'
                     sh 'npm run make -- --platform linux'
+                    sh 'npm run make -- --platform darwin'
                 }
             }
         }

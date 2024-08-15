@@ -263,6 +263,10 @@ ipcMain.on('open-zip-file-dialog', (event) => {
   }
 });
 
+ipcMain.on("get-app-version", (event) => {
+  event.returnValue = app.getVersion();
+});
+
 ipcMain.on('cancel-processing', (event) => {
   //isProcessingCanceled = true;
   console.debug('Processing canceled by the user.');

@@ -70,11 +70,11 @@
 
         <footer>
             <p>
-                This product is owned by Guaranty Support Inc.
-                For services please visit our website at guarantysupport.com.
-                For support questions, please contact <a
+                This free and open-source product was developed by Guaranty Support Inc in collaboration with NCIGF members.
+                If you'd like to report feedback, suggestions, or bugs contact <a
                     href="mailto:support@guarantysupportinc.com?subject=UDS Splitter Support">support@guarantysupportinc.com</a>.
             </p>
+            <p id="version">{Version}</p>
         </footer>
     </div>
 
@@ -170,6 +170,8 @@
                 document.getElementById('choose-additional-file').value = filePath
             }
         })
+
+        document.getElementById("version").innerHTML = `Version ${window.backend.Version()}`
     </script>
 
 </div>

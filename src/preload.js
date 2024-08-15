@@ -35,5 +35,8 @@ contextBridge.exposeInMainWorld('backend', {
     },
     OnSelectedZIPFile: (callback) => {
         ipcRenderer.on('selected-zip-file', (event, response) => callback(response))
+    },
+    Version: () => {
+        return ipcRenderer.sendSync("get-app-version")
     }
 });
