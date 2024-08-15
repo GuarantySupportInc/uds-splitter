@@ -4,28 +4,21 @@ const { createNewTrailer, sortFileByClaim, getClaimNumber, swap_batch_number_in_
 const { app, ipcMain, BrowserWindow, dialog, shell, Menu, MenuItem } = require('electron');
 const path = require('path');
 const fs = require('fs');
-
 const { updateElectronApp } = require('update-electron-app');
+
+// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+if (require('electron-squirrel-startup')) {
+  app.quit();
+}
 updateElectronApp(); // additional configuration options available
 
 app.enableSandbox()
-
-let electron_path;
-if(process.platform === 'win32')
-  electron_path = 'node_modules/.bin/electron.cmd'
-else
-  electron_path = 'node_modules/.bin/electron';
 
 require('electron-reload')(__dirname, {
   hardResetMethod: 'exit'
 })
 
 let mainWindow;
-
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
-  app.quit();
-}
 
 const createWindow = () => {
   // Create the browser window.
