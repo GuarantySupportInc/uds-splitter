@@ -20,7 +20,7 @@ pipeline {
         stage('Install') {
             environment {
                 POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"').trim()
-                CURRENT_COMMIT = sh(returnStdout: true, script: 'git log -1 | sed -n "s/^commit //p"')
+                CURRENT_COMMIT = sh(returnStdout: true, script: 'git log -1 | sed -n "s/^commit //p"').trim()
             }
             steps {
                 script {
@@ -69,7 +69,7 @@ pipeline {
                 script {
                     sh 'build/notify-github.sh "pending" "Publishing"'
                     sh 'git push origin "v$(date +%Y.%m.%d)"'
-                    withEnv(["GITHUB_TOKEN=" + sh(returnStdout: true, script: 'gh auth token')]) {
+                    withEnv(["GITHUB_TOKEN=" + sh(returnStdout: true, script: 'gh auth token').trim()]) {
                         sh 'npx electron-forge publish'
                     }
                 }
