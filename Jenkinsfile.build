@@ -5,6 +5,10 @@ pipeline {
         skipStagesAfterUnstable()
     }
 
+    environment {
+        POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"').trim()
+    }
+
     stages {
 		stage('Setup') {
             steps {
@@ -19,7 +23,6 @@ pipeline {
         }
         stage('Install') {
             environment {
-                POTENTIAL_VERSION = sh(returnStdout: true, script: 'echo "$(date +%Y.%m.%d)"').trim()
                 CURRENT_COMMIT = sh(returnStdout: true, script: 'git log -1 | sed -n "s/^commit //p"').trim()
             }
             steps {
@@ -69,10 +72,14 @@ pipeline {
             steps {
                 script {
                     sh 'build/notify-github.sh "pending" "Publishing"'
-                    sh 'git push origin "v$(date +%Y.%m.%d)"'
+                    sh 'git push origin "v${POTENTIAL_VERSION}"'
                     withEnv(["GITHUB_TOKEN=" + sh(returnStdout: true, script: 'gh auth token').trim()]) {
                         sh 'npx electron-forge publish'
                     }
+
+                    // For each file in ./out/make, upload it to the listed release and overwrite existing files just in case.
+                    sh 'find ./out/make -type f -print0 | xargs -0 -Ifile gh release upload "v${POTENTIAL_VERSION}" file --clobber'
+                    sh 'gh release edit "v${POTENTIAL_VERSION}" --tag=v${POTENTIAL_VERSION} --verify-tag'
                 }
             }
         }

@@ -5,6 +5,9 @@ const { app, ipcMain, BrowserWindow, dialog, shell, Menu, MenuItem } = require('
 const path = require('path');
 const fs = require('fs');
 
+const { updateElectronApp } = require('update-electron-app');
+updateElectronApp(); // additional configuration options available
+
 app.enableSandbox()
 
 let electron_path;
