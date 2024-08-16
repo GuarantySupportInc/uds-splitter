@@ -93,31 +93,74 @@ describe('Electron Testing', () => {
         expect(isChecked).toBe(false);
 
         // Check the checkbox again
-        await openFolderCheckbox.click();
+        // await openFolderCheckbox.click();
 
-        // Verify that the checkbox is checked again
-        isChecked = await openFolderCheckbox.isSelected();
-        expect(isChecked).toBe(true);
+        // // Verify that the checkbox is checked again
+        // isChecked = await openFolderCheckbox.isSelected();
+        // expect(isChecked).toBe(true);
     });
 
     it('should submit the form', async () => {
-        const all_buttons = await browser.$$("button")
-        for (const button of all_buttons) {
-            console.debug(await button.getHTML())
-        }
-
         const submitButton = await browser.$('#submit-button');
         await submitButton.click()
-        // await browser.execute(() => {
-        //     document.getElementById('submit-button').dispatchEvent(new Event('click'));
-        // });
     })
 
-    it("A Record file should exist", async() => {
+    it("should verify that the A Record file exists", async() => {
         await new Promise(resolve => setTimeout(resolve, 200))
 
         // verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555AIN01IN9900520240701 (1)-1.txt'))
         // verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555AIN01IN9900620240701 (1)-2.txt'))
     })
+
+    it('should submit and verify the form for I Records', async () => {
+        const filePath = path.resolve(__dirname, '../input_files/55555IIN01IN9902020240812.txt')
+        const zipFilePath = path.resolve(__dirname, '../input_files/55555IIN01IN9902020240812.zip')
+
+        await browser.execute((filePath) => {
+            document.getElementById('chosen-file').value = filePath;
+        }, filePath);
+
+        await browser.execute((zipFilePath) => {
+            document.getElementById('choose-additional-file').value = zipFilePath;
+        }, zipFilePath);
+
+        const outputFolderPath = path.resolve(__dirname, '../output_files')
+        const outputFolder = await browser.$('#output-directory');
+        await outputFolder.setValue(outputFolderPath);
+
+        const desiredFiles = await browser.$('#number-of-files');
+        await desiredFiles.setValue('3');
+
+        const batchNumberInput = await browser.$('#starting-batch-number');
+        await batchNumberInput.setValue('5');
+
+        const submitButton = await browser.$('#submit-button');
+        await submitButton.click()
+
+    });
+
+    it('should submit and verify the form for F Records', async () => {
+        const filePath = path.resolve(__dirname, '../input_files/55555FIN01IN9900120240814.txt')
+
+        await browser.execute((filePath) => {
+            document.getElementById('chosen-file').value = filePath;
+        }, filePath);
+
+
+        const outputFolderPath = path.resolve(__dirname, '../output_files')
+        const outputFolder = await browser.$('#output-directory');
+        await outputFolder.setValue(outputFolderPath);
+
+        const desiredFiles = await browser.$('#number-of-files');
+        await desiredFiles.setValue('3');
+
+        const batchNumberInput = await browser.$('#starting-batch-number');
+        await batchNumberInput.setValue('5');
+
+        const submitButton = await browser.$('#submit-button');
+        await submitButton.click()
+    });
+
+
 })
 

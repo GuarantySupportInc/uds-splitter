@@ -81,9 +81,17 @@
     <script>
         function submit_form() {
             const formData = new FormData(document.querySelector("form"));
-
-            if (is_null_or_empty(formData.get("chosen-file"))) {
+            let chosenFile = formData.get("chosen-file")
+            if (is_null_or_empty(chosenFile)) {
                 alert("A file to process has not been chosen.")
+                return
+            }
+
+            const uds_file_regex = /(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
+            let groups = chosenFile.match(uds_file_regex)
+
+            if(!groups) {
+                alert(`Selected File ${chosenFile} does not match UDS file format. Please select a valid UDS file.`)
                 return
             }
 
@@ -93,7 +101,7 @@
             }
 
             let data = convert_form_data_to_dict(formData)
-
+            data['open-folder'] = formData.has('open-folder');  //will always put the value in the form and converts to boolean instead of 'on'
             window.backend.SubmitForm(data)
             window.backend.OnFormSubmitted((response) => {
                 console.debug(response);
@@ -118,6 +126,8 @@
             if (filePath === 'canceled') {
                 document.getElementById('chosen-file-friendly').innerText = 'No file selected';
                 document.getElementById('chosen-file').value = ""
+                document.getElementById('choose-additional-file-friendly').innerText = ""
+                document.getElementById('choose-additional-file').value = ""
 
                 // Hide Additional File Section
                 document.getElementById("zip-section").style.display = "none"
@@ -145,8 +155,9 @@
                     document.getElementById("zip-section").style.display = "initial"
                 } else {
                     document.getElementById("zip-section").style.display = "none"
+                    document.getElementById('choose-additional-file-friendly').innerText = ""
+                    document.getElementById('choose-additional-file').value = ""
                 }
-
 
                 console.debug(`Found UDS match: ${groups}`)
                 console.debug(`Successfully selected ${filePath}`)
@@ -169,6 +180,10 @@
                 document.getElementById('choose-additional-file-friendly').innerText = filePath.substring(filePath.lastIndexOf(file_sep(filePath)) + 1);
                 document.getElementById('choose-additional-file').value = filePath
             }
+        })
+
+        window.backend.OnBackendException((exception) => {
+          alert(exception)
         })
 
         document.getElementById("version").innerHTML = `Version ${window.backend.Version()}`

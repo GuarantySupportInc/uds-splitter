@@ -94,6 +94,28 @@ app.on('window-all-closed', () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
+// Error handling not working as expected
+// Handle uncaught exceptions globally in the main process
+// app.on('uncaughtException', (error) => {
+//   console.error('Uncaught Exception:', error.message);
+
+//   // Send the error to the renderer process
+//   if (mainWindow && mainWindow.webContents) {
+//       mainWindow.webContents.send('backend-exception', error.message);
+//   }
+
+// });
+
+// if you try to import unhandled you will get an error!
+// unhandled({
+//   showDialog: true, // This shows an error dialog automatically
+//   logger: (error) => {
+//       console.error('Unhandled Error:', error);
+//       if (mainWindow && mainWindow.webContents) {
+//           mainWindow.webContents.send('backend-exception', error.message);
+//       }
+//   },
+// });
 
 //main function on submission
 ipcMain.on('submitted-form', (event, formData) => {
@@ -127,17 +149,42 @@ ipcMain.on('submitted-form', (event, formData) => {
   fs.readFile(formData["chosen-file"], 'utf-8', async (err, data) => {
     if (err) {
       console.error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
-      throw new Error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
+      event.sender.send('backend-exception', err + '\n Please contact support@guarantysupportinc.com with this exception');
     }
     console.info('File read successfully.');
     const lines = data.split('\r\n');
 
+    if (lines.length === 0 || !lines[0].includes("HEADER")) {
+      console.error("Not a valid UDS file: HEADER not found in the first line.");
+      event.sender.send('backend-exception', 'Not a valid UDS file: HEADER not found in the first line.');
+      // I believe this only returns the async function, not the whole function... hence why 'End' still prints
+      return;
+    }
+
     const header = lines.shift();
-    let trailer = lines.pop();
+    let trailer
+    let lastLine = lines.pop();      //get the last line of the file.. some records have an extra space at the end and some dont
+    if (lastLine.includes("TRAILER")){  //if the last line is the trailer, then we need to keep it
+      trailer = lastLine;
+    }
+    else{
+      trailer = lines.pop();          //if the last line is not the trailer, then the next line will be
+    }
     const numberOfLinesInFile = lines.length;
     const linesPerFile = Math.ceil(numberOfLinesInFile / numberOfFiles);
 
-    const result = sortFileByClaim(lines, recordType);
+    // if for whatever reason the contents are proper UDS but the name of the file is incorrect UDS, then this should catch it... 
+    // I suppose we could also try to pull the record type from the header? .. but that gets us into trouble based upon the zip needing to go with I Recs..
+    let result
+    try{
+      result = sortFileByClaim(lines, recordType);
+    }
+    catch(err){
+      console.error(`Error sorting file by claim: ${err.message}`);
+      event.sender.send('backend-exception', err)
+      return;
+    }
+
     const sortedLines = result.sortedLines;
 
     let fileIndex = 1;
@@ -186,6 +233,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       fs.writeFile(new_file_path, fileContent, (writeErr) => {
         if (writeErr) {
           throw new Error(`There was an error writing to ${new_file_path}: ${writeErr.message}`)
+          event.sender.send('backend-exception', writeErr + '\n Please contact support@guarantysupportinc.com with this exception');
         } else {
           console.debug(`File ${new_file_path} written successfully.`);
         }
@@ -201,6 +249,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       create_zip_files(zip_file_path, new_uds_files).catch(result => {
         // Do something with the error message. Maybe a popup?
         console.error(result.message)
+        event.sender.send('backend-exception', result.message + '\n Please contact support@guarantysupportinc.com with this exception');
       })
     }
     if (isProcessingCanceled) {
@@ -210,10 +259,18 @@ ipcMain.on('submitted-form', (event, formData) => {
     } else {
       event.sender.send('form-submitted', 'Form data and file processed successfully!');
       progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');
+      
+      //opening the folder where the files are written to, if the user decides
+      if (formData['open-folder']) {
+        shell.openPath(outputDir).then(() => {
+          console.log('Folder opened successfully');
+        }).catch((err) => {
+          console.error('Error opening folder:', err);
+        });
+      }
     }
   });
   console.debug('End')
-  // progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');  #when done
 });
 
 ipcMain.on('open-uds-file-dialog', (event) => {
