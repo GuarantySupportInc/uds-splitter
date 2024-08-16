@@ -7,9 +7,10 @@ const fs = require('fs');
 const { updateElectronApp } = require('update-electron-app');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
-  app.quit();
-}
+// if (require('electron-squirrel-startup')) {
+//   app.quit();
+// }
+
 updateElectronApp(); // additional configuration options available
 
 app.enableSandbox()
