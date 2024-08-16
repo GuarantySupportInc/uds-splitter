@@ -48,6 +48,7 @@ pipeline {
             steps {
                 script {
                     sh 'build/notify-github.sh "pending" "Testing"'
+                    sh 'rm -rf ./test/output_files/*.txt && rm -rf ./test/output_files/*.zip'
                     sh 'npm test'
                     sh 'npm run wdio-headless'
                 }
