@@ -5,9 +5,8 @@ import { sep, join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { stat, rm } from 'fs/promises';
 import AdmZip from 'adm-zip';
-const logger = require('electron-log/main')
+import logger from 'electron-log/main'
 logger.initialize()
-
 
 describe('createNewTrailer', function () {
     it('should create a new trailer for record type A correctly', function () {
