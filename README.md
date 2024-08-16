@@ -17,14 +17,14 @@ solve this problem by making the split process easy while still making the new f
 | :x:                | Not completed |
 
 
-| Stage              | Meaning                                                   |
-|--------------------|-----------------------------------------------------------|
-| Implementation     | Code is written in this stage                             |
-| Unit Testing       | Code is tested for reliability and flexibility            |
+| Stage         | Meaning                                                   |
+|---------------|-----------------------------------------------------------|
+| Implementation | Code is written in this stage                             |
+| Testing       | Code is tested for reliability and flexibility            |
 | 3rd-Party Verified | Another party outside GSI has confirmed the feature works |
 
 
-| Feature                                        | Implementation     | Unit Testing       | 3rd-Party Verified |
+| Feature                                        | Implementation     | Testing            | 3rd-Party Verified |
 |------------------------------------------------|--------------------|--------------------|--------------------|
 | Split A Record                                 | :white_check_mark: | :white_check_mark: | :x:                |
 | Split F Record                                 | :white_check_mark: | :white_check_mark: | :x:                |
@@ -35,8 +35,8 @@ solve this problem by making the split process easy while still making the new f
 | Split C Record                                 | :x:                | :x:                | :x:                |
 | Split D Record                                 | :x:                | :x:                | :x:                |
 | Keep claims together during split              | :white_check_mark: | :white_check_mark: | :x:                |
-| Logging to file                                | :x:                | :x:                | :x:                |
-| GitHub Checks integration for /dev and /master | :white_check_mark: | :x:                | :x:                |
+| Logging to file                                | :white_check_mark: | :white_check_mark: | :x:                |
+| GitHub Checks integration for /dev and /master | :white_check_mark: | :white_check_mark: | :x:                |
 | Windows Code Signing Certificate               | :x:                | :x:                | :x:                |
 | Apple Code Signing Certificate                 | :x:                | :x:                | :x:                |
 | Automatic Record Type Detection                | :white_check_mark: | :white_check_mark: | :x:                |
@@ -44,7 +44,7 @@ solve this problem by making the split process easy while still making the new f
 | Open Folder on Complete                        | :white_check_mark: | :white_check_mark: | :x:                |
 | Ability to save settings                       | :x:                | :x:                | :x:                |
 | 'Help' links in menubar                        | :white_check_mark: | :white_check_mark: | :x:                |
-| Downloadable installation executable           | :x:                | :x:                | :x:                |
+| Downloadable installation executable           | :white_check_mark: | :white_check_mark: | :x:                |
 | User Manual                                    | :white_check_mark: | :white_check_mark: | :x:                |
 
 
