@@ -45,6 +45,7 @@
     "adm-zip": "^0.5.14",
     "electron-reload": "^2.0.0-alpha.1",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-unhandled": "^5.0.0",
     "update-electron-app": "^3.0.0"
   }
 }

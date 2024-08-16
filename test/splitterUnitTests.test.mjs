@@ -4,6 +4,7 @@ import { convert_form_data_to_dict, file_sep, get_directory_from_path, is_null_o
 import { sep, join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { stat, rm } from 'fs/promises';
+import AdmZip from 'adm-zip';
 
 
 describe('createNewTrailer', function () {
@@ -610,17 +611,16 @@ describe('padDigitsLocal', function () {
 });
 
 //helper to verify the zip is being made
-async function verify_file_exists_then_delete(file_path) {
+async function verify_zip_then_delete(file_path) {
     try {
-        await stat(file_path);
-        console.debug(`File ${file_path} exists!`);
+        const zip = new AdmZip(file_path);
+        const zipEntries = zip.getEntries();
 
         await rm(file_path);
         console.debug(`Deleting ${file_path}`);
-        return true; // File existed and was successfully deleted
+        return zipEntries.length
     } catch (error) {
         console.error(error);
-        return false; // Either the file does not exist or failed to delete
     }
 }
 
@@ -635,8 +635,8 @@ describe('create_zip_files', function() {
 
         await create_zip_files(original_zip_file, final_uds_file_paths);
         const new_zip_file_path = resolve(__dirname, './input_files/55555IIN01IN9900120240805-1.zip');
-        const result = await verify_file_exists_then_delete(new_zip_file_path);
-        expect(result).to.equal(true, 'The zip file was not created or failed to delete');
+        const result = await verify_zip_then_delete(new_zip_file_path);
+        expect(result).to.equal(2);
     });
 
     // apparently since this is async, it needs to use 'chai-as-promised' but I'm not going to bother with another installed library for one test that should be negative
