@@ -5,6 +5,8 @@ import { sep, join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { stat, rm } from 'fs/promises';
 import AdmZip from 'adm-zip';
+const logger = require('electron-log/main')
+logger.initialize()
 
 
 describe('createNewTrailer', function () {
@@ -617,10 +619,10 @@ async function verify_zip_then_delete(file_path) {
         const zipEntries = zip.getEntries();
 
         await rm(file_path);
-        console.debug(`Deleting ${file_path}`);
+        logger.debug(`Deleting ${file_path}`);
         return zipEntries.length
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 }
 

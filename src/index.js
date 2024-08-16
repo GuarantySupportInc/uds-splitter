@@ -5,11 +5,21 @@ const { app, ipcMain, BrowserWindow, dialog, shell, Menu, MenuItem } = require('
 const path = require('path');
 const fs = require('fs');
 const { updateElectronApp } = require('update-electron-app');
+const logger = require('electron-log/main')
+logger.initialize()
+
+logger.errorHandler.startCatching()
+logger.eventLogger.startLogging()
+console.log = logger.log;
+
+logger.debug("Starting up")
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 // if (require('electron-squirrel-startup')) {
 //   app.quit();
 // }
+
+logger.debug("About to update electron")
 
 updateElectronApp(); // additional configuration options available
 
@@ -97,7 +107,7 @@ app.on('window-all-closed', () => {
 // Error handling not working as expected
 // Handle uncaught exceptions globally in the main process
 // app.on('uncaughtException', (error) => {
-//   console.error('Uncaught Exception:', error.message);
+//   logger.error('Uncaught Exception:', error.message);
 
 //   // Send the error to the renderer process
 //   if (mainWindow && mainWindow.webContents) {
@@ -110,7 +120,7 @@ app.on('window-all-closed', () => {
 // unhandled({
 //   showDialog: true, // This shows an error dialog automatically
 //   logger: (error) => {
-//       console.error('Unhandled Error:', error);
+//       logger.error('Unhandled Error:', error);
 //       if (mainWindow && mainWindow.webContents) {
 //           mainWindow.webContents.send('backend-exception', error.message);
 //       }
@@ -119,7 +129,7 @@ app.on('window-all-closed', () => {
 
 //main function on submission
 ipcMain.on('submitted-form', (event, formData) => {
-  console.debug('Form data received:', formData);
+  logger.debug('Form data received:', formData);
   const filePath = formData["chosen-file"];
   const zip_file_path = formData["additional-chosen-file"]
   const fileName = path.basename(filePath);
@@ -129,7 +139,7 @@ ipcMain.on('submitted-form', (event, formData) => {
   const outputDir = formData["output-directory"];
   const startingBatchNumber = formData["starting-batch-number"];
   let isProcessingCanceled = false;
-  console.debug('File path received:', filePath);
+  logger.debug('File path received:', filePath);
   const progressWindow = new BrowserWindow({
     width: 400,
     height: 250,
@@ -145,17 +155,17 @@ ipcMain.on('submitted-form', (event, formData) => {
   });
 
   progressWindow.loadFile(path.join(__dirname, 'progress.html'));
-  console.debug('Record type:', recordType);
+  logger.debug('Record type:', recordType);
   fs.readFile(formData["chosen-file"], 'utf-8', async (err, data) => {
     if (err) {
-      console.error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
+      logger.error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
       event.sender.send('backend-exception', err + '\n Please contact support@guarantysupportinc.com with this exception');
     }
-    console.info('File read successfully.');
+    logger.info('File read successfully.');
     const lines = data.split('\r\n');
 
     if (lines.length === 0 || !lines[0].includes("HEADER")) {
-      console.error("Not a valid UDS file: HEADER not found in the first line.");
+      logger.error("Not a valid UDS file: HEADER not found in the first line.");
       event.sender.send('backend-exception', 'Not a valid UDS file: HEADER not found in the first line.');
       // I believe this only returns the async function, not the whole function... hence why 'End' still prints
       return;
@@ -180,7 +190,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       result = sortFileByClaim(lines, recordType);
     }
     catch(err){
-      console.error(`Error sorting file by claim: ${err.message}`);
+      logger.error(`Error sorting file by claim: ${err.message}`);
       event.sender.send('backend-exception', err)
       return;
     }
@@ -229,13 +239,13 @@ ipcMain.on('submitted-form', (event, formData) => {
 
       let progress = Math.round(((i + linesPerFile) / numberOfLinesInFile) * 100);  //progress is kinda difficult to calc with this method since we're not using two loops.. this is basically just saying when a file is done.. maybe can keep track of chunk len outside the loop
       progressWindow.webContents.send('progress-update', progress);
-      console.debug(`Writing file ${new_file_path}...`);
+      logger.debug(`Writing file ${new_file_path}...`);
       fs.writeFile(new_file_path, fileContent, (writeErr) => {
         if (writeErr) {
           throw new Error(`There was an error writing to ${new_file_path}: ${writeErr.message}`)
           event.sender.send('backend-exception', writeErr + '\n Please contact support@guarantysupportinc.com with this exception');
         } else {
-          console.debug(`File ${new_file_path} written successfully.`);
+          logger.debug(`File ${new_file_path} written successfully.`);
         }
       });
 
@@ -248,7 +258,7 @@ ipcMain.on('submitted-form', (event, formData) => {
     if (recordType.toLowerCase() === 'i') {
       create_zip_files(zip_file_path, new_uds_files).catch(result => {
         // Do something with the error message. Maybe a popup?
-        console.error(result.message)
+        logger.error(result.message)
         event.sender.send('backend-exception', result.message + '\n Please contact support@guarantysupportinc.com with this exception');
       })
     }
@@ -263,14 +273,14 @@ ipcMain.on('submitted-form', (event, formData) => {
       //opening the folder where the files are written to, if the user decides
       if (formData['open-folder']) {
         shell.openPath(outputDir).then(() => {
-          console.log('Folder opened successfully');
+          logger.log('Folder opened successfully');
         }).catch((err) => {
-          console.error('Error opening folder:', err);
+          logger.error('Error opening folder:', err);
         });
       }
     }
   });
-  console.debug('End')
+  logger.debug('End')
 });
 
 ipcMain.on('open-uds-file-dialog', (event) => {
@@ -323,5 +333,5 @@ ipcMain.on("get-app-version", (event) => {
 
 ipcMain.on('cancel-processing', (event) => {
   //isProcessingCanceled = true;
-  console.debug('Processing canceled by the user.');
+  logger.debug('Processing canceled by the user.');
 });
