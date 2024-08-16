@@ -15,9 +15,9 @@ console.log = logger.log;
 logger.debug("Starting up")
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-// if (require('electron-squirrel-startup')) {
-//   app.quit();
-// }
+if (require('electron-squirrel-startup')) {
+  app.quit();
+}
 
 logger.debug("About to update electron")
 
