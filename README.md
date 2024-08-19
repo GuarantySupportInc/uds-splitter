@@ -48,10 +48,19 @@ solve this problem by making the split process easy while still making the new f
 | User Manual                                    | :white_check_mark: | :white_check_mark: | :x:                |
 
 
-## Notes from the team (August 2nd, 2024)
-We are currently in the process of getting automated unit testing in place for A/F/G/M/B. I Records are in progress
-still mainly due to the ZIP file companion which needs special attention. Our focus has been on the bare minimum use-case
-that would be immediately helpful with priorities provided by a member from North Carolina (A/F/I/B).
+## How to build from source code
+This repository is using ElectronJS with the underlying web framework NodeJS. Thus you will need to install the latest
+version of [NodeJS](https://nodejs.org/en).
+1. Go to project base directory where [package.json](package.json) is located.
+2. Run `npm install` which will download all dependencies listed in package.json and their specific required version
+3. Run `npm run make` which is a saved command alias in package.json which runs the underlying command `electron-forge make`
+4. To test the project, run `npm test` for Unit Tests using Mocha, and `npm run wdio` for UI testing which is another command alias for `wdio run ./wdio.conf.js`. Keep in mind the UI testing is incomplete and is not as comprehensive as the Unit Testing.
 
-Some low-hanging fruit will be tackled early next week while automated testing progresses, but the first milestone is
-to get 3rd-Party Verification for a few of the above features.
+## Versioning Scheme
+The version displayed at the bottom of the UDS Splitter Desktop utility is simply the date of the last published version.
+v{year}.{month}.{day} without '0'-padding. There are only a limited number of features for this desktop utility, so there is no
+'roadmap' or major releases which might encourage the versioning to be any other way. If that changes in the future, so will
+the versioning scheme.
+
+It is encouraged that you have the latest published release since it will have the latest security patches and bug fixes.
+An implemented NodeJS dependency `update-electron-app` claims to assist in this upgrade process automatically, but it is untested.
