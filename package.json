@@ -1,7 +1,7 @@
 {
   "name": "uds-splitter-utility",
   "productName": "uds-splitter-utility",
-  "version": "1.0.0",
+  "version": "2024.8.16",
   "description": "This utility is designed to accept a UDS 2.0-compliant text file and modify its size by splitting it into more consumable pieces before importing into a Claim System.",
   "main": "src/index.js",
   "scripts": {
@@ -43,6 +43,7 @@
   "license": "MIT",
   "dependencies": {
     "adm-zip": "^0.5.14",
+    "electron-log": "^5.1.7",
     "electron-reload": "^2.0.0-alpha.1",
     "electron-squirrel-startup": "^1.0.1",
     "electron-unhandled": "^5.0.0",

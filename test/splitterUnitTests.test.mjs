@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 import { stat, rm } from 'fs/promises';
 import AdmZip from 'adm-zip';
 
-
 describe('createNewTrailer', function () {
     it('should create a new trailer for record type A correctly', function () {
         const chunk = [

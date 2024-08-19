@@ -27,14 +27,13 @@ pipeline {
             }
             steps {
                 script {
-                    sh 'build/notify-github.sh "pending" "Setting up environment"'
                     sh 'npm ci'
                     sh 'git tag -d "v${POTENTIAL_VERSION}" || true' // Remove local git tags
                     sh 'git tag -a "v${POTENTIAL_VERSION}" -m "Version ${POTENTIAL_VERSION}"'
                     sh 'npm version from-git --no-git-tag-version'
                     sh 'rm -rf ./out'
-                    sh 'npm run make -- --platform win32'
                     sh 'npm run make -- --platform linux'
+                    // sh 'npm run make -- --platform win32' Too hard to figure out Wine stuff for now.
                     // sh 'npm run make -- --platform darwin' Not supported on Jenkins machine
                 }
             }
@@ -47,7 +46,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh 'build/notify-github.sh "pending" "Testing"'
+                    sh 'rm -rf ./test/output_files/*.txt && rm -rf ./test/output_files/*.zip'
                     sh 'npm test'
                     sh 'npm run wdio-headless'
                 }
@@ -61,7 +60,6 @@ pipeline {
             }
             steps {
                 script {
-                    sh 'build/notify-github.sh "pending" "Synk Scan"'
                     sh 'snyk.sh auth ${SNYK_TOKEN}'
                     sh 'snyk.sh test'
                     // sh 'snyk.sh code test'
@@ -71,7 +69,6 @@ pipeline {
         stage('Remote Build') {
             steps {
                 script {
-                    sh 'build/notify-github.sh "pending" "Publishing"'
                     sh 'git push origin "v${POTENTIAL_VERSION}"'
                     withEnv(["GITHUB_TOKEN=" + sh(returnStdout: true, script: 'gh auth token').trim()]) {
                         sh 'npx electron-forge publish'
@@ -82,17 +79,6 @@ pipeline {
                     sh 'gh release edit "v${POTENTIAL_VERSION}" --tag=v${POTENTIAL_VERSION} --verify-tag'
                 }
             }
-        }
-    }
-    post {
-        success {
-            sh 'build/notify-github.sh "success" "Build was successful"'
-        }
-        failure {
-            sh 'build/notify-github.sh "failure" "Testing has failed"'
-        }
-        aborted {
-            sh 'build/notify-github.sh "failure" "Build was aborted partway"'
         }
     }
 }

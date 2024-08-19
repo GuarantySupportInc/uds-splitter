@@ -1,21 +1,23 @@
 const { browser } = require('@wdio/globals');
 const path = require('path');
 const fs = require('fs');
+const logger = require('electron-log/main')
+logger.initialize()
 
 function verify_file_exists_then_delete(file_path) {
     fs.stat(file_path,
         {}, (err, success) => {
             if(err) {
-                console.error(err);
+                logger.error(err);
                 throw err
             }
 
-            console.debug(`File ${file_path} exists!`)
+            logger.debug(`File ${file_path} exists!`)
 
             fs.rm(file_path,
                 {},
                 () => {
-                    console.debug(`Deleting ${file_path}`)
+                    logger.debug(`Deleting ${file_path}`)
                 })
         });
 }

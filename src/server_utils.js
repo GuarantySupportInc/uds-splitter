@@ -8,6 +8,7 @@ const path = require("path");
 const ReadLine = require('readline')
 const { once } = require('events');
 const UDS_FILE_REGEX = /^(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
+const logger = require('electron-log/main')
 
 function padDigits(number, digits) {
   return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
@@ -295,7 +296,7 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
     if(!(uds_version_of_entry in file_map))
       throw new Error(`${uds_version_of_entry} is not in an a resulting UDS file. Are you sure the ZIP goes with the UDS file?`)
 
-    console.debug(`Processing ZIP entry: ${entry.entryName}`)
+    logger.debug(`Processing ZIP entry: ${entry.entryName}`)
 
     zip.readFileAsync(entry_name, (data, err) => {
 
@@ -308,7 +309,7 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
 
       file_map[uds_version_of_entry].forEach((uds_source_file) => {
         zip_map[uds_source_file].addFile(entry.entryName, data , entry.comment, entry.attr)
-        console.debug(zip_map[uds_source_file].getEntryCount())
+        logger.debug(zip_map[uds_source_file].getEntryCount())
       })
     })
   })
@@ -325,7 +326,7 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
 
     new_zip_file.writeZip(new_zip_name, (error) => {
       if (error) {
-        console.error(error)
+        logger.error(error)
       }
     })
   }
