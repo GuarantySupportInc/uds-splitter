@@ -53,7 +53,7 @@ This repository is using ElectronJS with the underlying web framework NodeJS. Th
 version of [NodeJS](https://nodejs.org/en).
 1. Go to project base directory where [package.json](package.json) is located.
 2. Run `npm install` which will download all dependencies listed in package.json and their specific required version
-3. Run `npm run make` which is a saved command alias in package.json which runs the underlying command `electron-forge make`
+3. Run `npm run make` which is a saved command alias in package.json which runs the underlying command `electron-forge make` to create executables under `./out/make/**`
 4. To test the project, run `npm test` for Unit Tests using Mocha, and `npm run wdio` for UI testing which is another command alias for `wdio run ./wdio.conf.js`. Keep in mind the UI testing is incomplete and is not as comprehensive as the Unit Testing.
 
 ## Versioning Scheme
