@@ -22,13 +22,13 @@ module.exports = {
       name: '@electron-forge/maker-deb',
       config: {}
     },
-    {
-      name: '@electron-forge/maker-pkg', // MAC
-      config: {
-        // keychain: 'my-secret-ci-keychain'
-        // other configuration options
-      }
-    },
+    // {
+    //   // name: '@electron-forge/maker-pkg', // MAC
+    //   // config: {
+    //   //   // keychain: 'my-secret-ci-keychain'
+    //   //   // other configuration options
+    //   // }
+    // },
     {
       name: '@electron-forge/maker-zip',
       platforms: ['darwin'],

@@ -108,8 +108,8 @@ describe('Electron Testing', () => {
     it("should verify that the A Record file exists", async() => {
         await new Promise(resolve => setTimeout(resolve, 200))
 
-        // verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555AIN01IN9900520240701 (1)-1.txt'))
-        // verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555AIN01IN9900620240701 (1)-2.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555AIN01IN9900520240701 (1)-1.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555AIN01IN9900620240701 (1)-2.txt'))
     })
 
     it('should submit and verify the form for I Records', async () => {
@@ -137,6 +137,13 @@ describe('Electron Testing', () => {
         const submitButton = await browser.$('#submit-button');
         await submitButton.click()
 
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555IIN01IN9902020240812-1.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555IIN01IN9902020240812-2.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555IIN01IN9902020240812-3.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555IIN01IN9902020240812-1.zip'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555IIN01IN9902020240812-2.zip'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555IIN01IN9902020240812-3.zip'))
+
     });
 
     it('should submit and verify the form for F Records', async () => {
@@ -159,8 +166,37 @@ describe('Electron Testing', () => {
 
         const submitButton = await browser.$('#submit-button');
         await submitButton.click()
+
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555FIN01IN9900120240814-1.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555FIN01IN9900120240814-2.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555FIN01IN9900120240814-3.txt'))
     });
 
+    it('should submit and verify the form for G Records', async () => {
+        const filePath = path.resolve(__dirname, '../input_files/test/input_files/55555GIN01IN9900220240814.txt')
+
+        await browser.execute((filePath) => {
+            document.getElementById('chosen-file').value = filePath;
+        }, filePath);
+
+
+        const outputFolderPath = path.resolve(__dirname, '../output_files')
+        const outputFolder = await browser.$('#output-directory');
+        await outputFolder.setValue(outputFolderPath);
+
+        const desiredFiles = await browser.$('#number-of-files');
+        await desiredFiles.setValue('3');
+
+        const batchNumberInput = await browser.$('#starting-batch-number');
+        await batchNumberInput.setValue('5');
+
+        const submitButton = await browser.$('#submit-button');
+        await submitButton.click()
+
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555GIN01IN9900220240814-1.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555GIN01IN9900220240814-2.txt'))
+        verify_file_exists_then_delete(path.join(__dirname, '../output_files/55555GIN01IN9900220240814-3.txt'))
+    });
 
 })
 
