@@ -42,7 +42,8 @@ const createWindow = () => {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false
-    }
+    },
+    icon: path.join(__dirname, 'icon.ico'),
   });
 
   mainWindow.setMenu(Menu.buildFromTemplate([
@@ -152,6 +153,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       nodeIntegration: false,
       preload: path.join(__dirname, 'preload.js')
     },
+    icon: path.join(__dirname, 'icon.ico'),
   });
 
   progressWindow.loadFile(path.join(__dirname, 'progress.html'));

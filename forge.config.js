@@ -1,26 +1,30 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 const process = require("process")
-
+const path = require("path");
 // process.env.SOMETHING
 
 
 module.exports = {
   packagerConfig: {
     asar: true,
-    name: 'uds-splitter-utility'
+    name: 'uds-splitter-utility',
+    icon: './icon',
   },
-  rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-squirrel', // WINDOWS
-      config: {},
+      config: {
+        setupIcon: './icon.ico',
+      },
       // Code Signing
       // https://www.electronforge.io/guides/code-signing/code-signing-windows
     },
     {
       name: '@electron-forge/maker-deb',
-      config: {}
+      config: {
+        icon:  './icon.ico'
+      }
     },
     {
       name: '@electron-forge/maker-pkg', // MAC
