@@ -21,7 +21,7 @@ exports.config = {
     // of the config file unless it's absolute.
     //
     specs: [
-        './test/specs/**/*.js'
+        'test/specs/**/*.js',
     ],
     // Patterns to exclude.
     exclude: [
@@ -66,12 +66,12 @@ exports.config = {
     // Define all options that are relevant for the WebdriverIO instance here
     //
     // Level of logging verbosity: trace | debug | info | warn | error | silent
-    logLevel: 'debug',
+    logLevel: 'info',
     //
     // Set specific log levels per logger
     // loggers:
     // - webdriver, webdriverio
-    // - @wdio/browserstack-service, @wdio/devtools-service, @wdio/sauce-service
+    // - @wdio/browserstack-service, @wdio/lighthouse-service, @wdio/sauce-service
     // - @wdio/mocha-framework, @wdio/jasmine-framework
     // - @wdio/local-runner
     // - @wdio/sumologic-reporter
@@ -129,7 +129,7 @@ exports.config = {
     // Test reporter for stdout.
     // The only one supported by default is 'dot'
     // see also: https://webdriver.io/docs/dot-reporter
-    reporters: ['spec'],
+    // reporters: ['dot'],
 
     // Options to be passed to Mocha.
     // See the full list at http://mochajs.org/
