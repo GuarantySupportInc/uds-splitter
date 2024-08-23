@@ -7,7 +7,7 @@ const fs = require('fs');
 const { updateElectronApp } = require('update-electron-app');
 const logger = require('electron-log/main')
 logger.initialize()
-
+logger.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
 logger.errorHandler.startCatching()
 logger.eventLogger.startLogging()
 console.log = logger.log;
@@ -19,9 +19,20 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
-logger.debug("About to update electron")
+if(fs.existsSync(path.resolve(path.dirname(process.execPath), '..', 'update.exe'))) {
+  // https://github.com/electron/electron/issues/4535#issuecomment-186662815
 
-updateElectronApp(); // additional configuration options available
+  // Basically Setup.exe generates the Update.exe file which does NOT exist with the `npm run make` command.
+  // So we need to only run the Update logic if the Executable environment was 'set up' by Setup.exe and
+  // not run the Update logic at all otherwise since it is likely a development environment.
+  updateElectronApp(
+      {
+        logger: logger
+      }
+  ); // additional configuration options available
+} else {
+  logger.debug("updateElectronApp() not called because we may be in a development environment.")
+}
 
 app.enableSandbox()
 
