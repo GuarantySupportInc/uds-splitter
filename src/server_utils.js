@@ -2,13 +2,16 @@
 
 
 // START OF FILE MUST LOOK LIKE A UDS FILE
-const AdmZip = require('adm-zip');
+// const AdmZip = require('adm-zip');
 const fs = require("fs");
 const path = require("path");
 const ReadLine = require('readline')
-const { once } = require('events');
+const events = require("events");
 const UDS_FILE_REGEX = /^(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
 const logger = require('electron-log/main')
+const zip = require("@zip.js/zip.js")
+const stream = require("stream")
+
 
 function padDigits(number, digits) {
   return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
@@ -215,11 +218,11 @@ function join_path_parts(...args) {
 /**
  * I think the introduction of 'async' has added some out-of-sync issues between threads which results in variables
  * not being populated as expected. Just waiting for those variables to 'catch up' seems good enough for now.
- * @param zip
+ * @param existing_zip
  * @returns {Promise<void>}
  */
-async function wait_for_zip_to_populate(zip) {
-  while(!(zip.getEntryCount() > 0)) {
+async function wait_for_zip_to_populate(existing_zip) {
+  while(!(existing_zip.getEntryCount() > 0)) {
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
 }
@@ -230,9 +233,12 @@ async function wait_for_zip_to_populate(zip) {
  * assumption that .txt files are cheap and .zip files are expensive which forms the basis of the loop.
  * @param original_zip_file full path
  * @param final_uds_file_paths list of full paths
+ * @param callback void function run after writing each zip file.
  */
-async function create_zip_files(original_zip_file, final_uds_file_paths) {
-  let zip = new AdmZip(original_zip_file, {})
+async function create_zip_files(original_zip_file, final_uds_file_paths, callback) {
+  const original_zip_stream = fs.createReadStream(original_zip_file)
+
+  let existing_zip = new zip.ZipReader(ReadableStream.from(original_zip_stream))
 
   let file_map = {
     //"{file_path}": "{final_uds_file_path}"
@@ -248,12 +254,13 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
 
     let file_stream = fs.createReadStream(path)
 
-    await Promise.all([once(file_stream, "open")]) // If this is missing, reader becomes an empty iterator.
+    await events.once(file_stream, "open") // If this is missing, reader becomes an empty iterator.
 
     let reader = ReadLine.createInterface({input: file_stream, crlfDelay: Infinity})
 
-    if (!(path in zip_map))
-      zip_map[path] = new AdmZip(null, {})
+    if (!(path in zip_map)) {
+      zip_map[path] = new zip.ZipWriter(new zip.BlobWriter())
+    }
 
 
     for await (const line of reader) {
@@ -275,9 +282,9 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
   }
 
   // Determine where this entry to should go in the resulting uds files
-  zip.getEntries("").forEach((entry) => {
-
-    let entry_name = entry.entryName;
+  const existing_entries = await existing_zip.getEntries()
+  for(const entry of existing_entries) {
+    let entry_name = entry.filename;
 
     // Zip Slip prevention https://security.snyk.io/research/zip-slip-vulnerability
     let zip_base_directory = original_zip_file.substring(0, original_zip_file.lastIndexOf(path.sep));
@@ -287,47 +294,47 @@ async function create_zip_files(original_zip_file, final_uds_file_paths) {
     }
 
     // "\\Images\\test\\somefile.txt"
-    let uds_version_of_entry = `\\${trim(entry.entryName, '\\').replaceAll("/", "\\")}`
+    let uds_version_of_entry = `\\${trim(entry_name, '\\').replaceAll("/", "\\")}`
 
-    if(entry.isDirectory)
+    if(entry.directory)
       // We don't care about directories.
-      return
+      continue
 
     if(!(uds_version_of_entry in file_map))
       throw new Error(`${uds_version_of_entry} is not in an a resulting UDS file. Are you sure the ZIP goes with the UDS file?`)
 
-    logger.debug(`Processing ZIP entry: ${entry.entryName}`)
+    logger.debug(`Processing ZIP entry: ${entry_name}`)
 
-    zip.readFileAsync(entry_name, (data, err) => {
+    // Basically one Full Path could belong to multiple UDS files, so we store the list of UDS files for each full path
+    // then we get the resulting ZIP for each eventual UDS file. Thus we hope that zip.readFileAsync() is only called
+    // ONCE but the same data is propagated to as many UDS files as we need.
 
-      if(err)
-        throw new Error(`Something went wrong when reading ZIP Entry '${entry.entryName}' from '${original_zip_file}'`)
+    for (const uds_source_file of file_map[uds_version_of_entry]) {
+      const memory_stream = new zip.BlobWriter()
 
-      // Basically one Full Path could belong to multiple UDS files, so we store the list of UDS files for each full path
-      // then we get the resulting ZIP for each eventual UDS file. Thus we hope that zip.readFileAsync() is only called
-      // ONCE but the same data is propagated to as many UDS files as we need.
+      await entry.getData(memory_stream)
 
-      file_map[uds_version_of_entry].forEach((uds_source_file) => {
-        zip_map[uds_source_file].addFile(entry.entryName, data , entry.comment, entry.attr)
-        logger.debug(zip_map[uds_source_file].getEntryCount())
-      })
-    })
-  })
+      const memory_stream_data = await memory_stream.getData()
+
+      await zip_map[uds_source_file].add(
+          entry_name,
+          memory_stream_data.stream()
+      )
+    }
+  }
 
   for(let key in zip_map) {
-    let new_zip_name = `${key.substring(0, key.length - 4)}.zip`
-
     let new_zip_file = zip_map[key]
+    let data = await new_zip_file.close()
+    let new_zip_name = `${key.substring(0, key.length - 4)}.zip`
+    let writeable = fs.createWriteStream(new_zip_name)
 
-    await wait_for_zip_to_populate(new_zip_file)
-
-    if(new_zip_file.getEntryCount() === 0)
-      throw new Error(`ZIP file ${new_zip_name} will be created with no entries. Something went wrong.`)
-
-    new_zip_file.writeZip(new_zip_name, (error) => {
-      if (error) {
-        logger.error(error)
+    writeable.write(await data.bytes(), (error) => {
+      if(error) {
+        console.error(error)
       }
+
+      writeable.close(() => callback(new_zip_name))
     })
   }
 
@@ -339,12 +346,12 @@ module.exports = {
   sortFileByClaim,
   getClaimNumber,
   convertUDSCurrencyToFloat,
-  convertFloatToUDSCurrency,
   UDS_FILE_REGEX,
   swap_batch_number_in_file_name,
   join_path_parts,
   createNewHeader,
   create_zip_files,
   trim,
-  wait_for_zip_to_populate
+  wait_for_zip_to_populate,
+  convertFloatToUDSCurrency
 };

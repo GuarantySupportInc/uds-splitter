@@ -4,7 +4,7 @@ const { createNewTrailer, sortFileByClaim, getClaimNumber, swap_batch_number_in_
 const { app, ipcMain, BrowserWindow, dialog, shell, Menu, MenuItem } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { updateElectronApp } = require('update-electron-app');
+const { updateElectronApp, UpdateSourceType} = require('update-electron-app');
 const logger = require('electron-log/main')
 logger.initialize()
 logger.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
@@ -19,7 +19,7 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
-if(fs.existsSync(path.resolve(path.dirname(process.execPath), '..', 'update.exe'))) {
+if(fs.existsSync(path.resolve(path.dirname(process.execPath), '..', 'update.exe')) || fs.existsSync(path.resolve(path.dirname(process.execPath), '..', 'Update.exe'))) {
   // https://github.com/electron/electron/issues/4535#issuecomment-186662815
 
   // Basically Setup.exe generates the Update.exe file which does NOT exist with the `npm run make` command.
@@ -27,7 +27,11 @@ if(fs.existsSync(path.resolve(path.dirname(process.execPath), '..', 'update.exe'
   // not run the Update logic at all otherwise since it is likely a development environment.
   updateElectronApp(
       {
-        logger: logger
+        logger: logger,
+        updateSource: {
+          type: UpdateSourceType.StaticStorage,
+          baseUrl: `https://github.com/GuarantySupportInc/uds-splitter/releases/download/v${app.getVersion()}`
+        }
       }
   ); // additional configuration options available
 } else {
@@ -269,7 +273,7 @@ ipcMain.on('submitted-form', (event, formData) => {
     }
 
     if (recordType.toLowerCase() === 'i') {
-      create_zip_files(zip_file_path, new_uds_files).catch(result => {
+      create_zip_files(zip_file_path, new_uds_files, (file_name) => { console.info(`Created ${file_name}`) }).catch(result => {
         // Do something with the error message. Maybe a popup?
         logger.error(result.message)
         event.sender.send('backend-exception', result.message + '\n Please contact support@guarantysupportinc.com with this exception');
