@@ -70,7 +70,7 @@ const createWindow = () => {
     center: true,
     modal: false,
     webPreferences: {
-      preload: path.join(path.resolve("src"), 'preload.js'),
+      preload: path.join(path.resolve("src"), 'preload.mjs'),
       nodeIntegration: false
     },
     icon: path.join(path.resolve("src"), 'icon.ico'),
@@ -176,7 +176,7 @@ ipcMain.on('submitted-form', (event, formData) => {
       contextIsolation: true,
       enableRemoteModule: false,
       nodeIntegration: false,
-      preload: path.join(path.resolve("src"), 'preload.js')
+      preload: path.join(path.resolve("src"), 'preload.mjs')
     },
     icon: path.join(path.resolve("src"), 'icon.ico'),
   });
