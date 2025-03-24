@@ -3,7 +3,8 @@
   "productName": "uds-splitter-utility",
   "version": "2024.8.23",
   "description": "This utility is designed to accept a UDS 2.0-compliant text file and modify its size by splitting it into more consumable pieces before importing into a Claim System.",
-  "main": "src/index.js",
+  "main": "src/index.mjs",
+  "type": "module",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
@@ -12,7 +13,7 @@
     "lint": "echo \"No linting configured\"",
     "wdio": "wdio run ./wdio.conf.js",
     "wdio-headless": "xvfb-run wdio run ./wdio.conf.headless.js",
-    "test": "mocha"
+    "test": "electron-mocha"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.4.0",
@@ -32,7 +33,6 @@
     "chai": "^5.1.1",
     "electron": "^32.0.1",
     "electron-chromedriver": "^31.3.1",
-    "mocha": "^10.7.3",
     "wdio-electron-service": "^7.0.1"
   },
   "keywords": [],
@@ -49,6 +49,5 @@
     "electron-squirrel-startup": "^1.0.1",
     "electron-unhandled": "^5.0.0",
     "update-electron-app": "^3.0.0"
-  },
-  "type": "commonjs"
+  }
 }

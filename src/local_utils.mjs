@@ -43,7 +43,7 @@ function padDigits(number, digits) {
     return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
 }
 
-module.exports = {
+export {
     convert_form_data_to_dict,
     file_sep,
     get_directory_from_path,

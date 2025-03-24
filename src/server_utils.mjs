@@ -3,15 +3,16 @@
 
 // START OF FILE MUST LOOK LIKE A UDS FILE
 // const AdmZip = require('adm-zip');
-const fs = require("fs");
-const path = require("path");
-const ReadLine = require('readline')
-const events = require("events");
-const UDS_FILE_REGEX = /^(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
-const logger = require('electron-log/main')
-const zip = require("@zip.js/zip.js")
-const stream = require("stream")
+import logger from "electron-log/main.js";
 
+const UDS_FILE_REGEX = /^(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
+// const zip = require("@zip.js/zip.js/index")
+// import * as zip from "@zip.js/zip.js/index";
+import { ZipWriter, ZipReader, BlobWriter } from "@zip.js/zip.js"
+import events from "events";
+import ReadLine from "readline";
+import path from "path";
+import fs from "fs";
 
 function padDigits(number, digits) {
   return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
@@ -238,7 +239,7 @@ async function wait_for_zip_to_populate(existing_zip) {
 async function create_zip_files(original_zip_file, final_uds_file_paths, callback) {
   const original_zip_stream = fs.createReadStream(original_zip_file)
 
-  let existing_zip = new zip.ZipReader(ReadableStream.from(original_zip_stream))
+  let existing_zip = new ZipReader(ReadableStream.from(original_zip_stream))
 
   let file_map = {
     //"{file_path}": "{final_uds_file_path}"
@@ -259,7 +260,7 @@ async function create_zip_files(original_zip_file, final_uds_file_paths, callbac
     let reader = ReadLine.createInterface({input: file_stream, crlfDelay: Infinity})
 
     if (!(path in zip_map)) {
-      zip_map[path] = new zip.ZipWriter(new zip.BlobWriter())
+      zip_map[path] = new ZipWriter(new BlobWriter())
     }
 
 
@@ -310,7 +311,7 @@ async function create_zip_files(original_zip_file, final_uds_file_paths, callbac
     // ONCE but the same data is propagated to as many UDS files as we need.
 
     for (const uds_source_file of file_map[uds_version_of_entry]) {
-      const memory_stream = new zip.BlobWriter()
+      const memory_stream = new BlobWriter()
 
       await entry.getData(memory_stream)
 
@@ -340,7 +341,7 @@ async function create_zip_files(original_zip_file, final_uds_file_paths, callbac
 
 }
 
-module.exports = {
+export {
   padDigits,
   createNewTrailer,
   sortFileByClaim,

@@ -1,11 +1,26 @@
 'use strict';
 
-const { createNewTrailer, sortFileByClaim, getClaimNumber, swap_batch_number_in_file_name, join_path_parts, createNewHeader, create_zip_files } = require('./server_utils');
-const { app, ipcMain, BrowserWindow, dialog, shell, Menu, MenuItem } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const { updateElectronApp, UpdateSourceType} = require('update-electron-app');
-const logger = require('electron-log/main')
+import logger from "electron-log/main.js";
+import path from "path";
+import fs from "fs";
+import {
+  create_zip_files,
+  createNewHeader,
+  createNewTrailer,
+  getClaimNumber,
+  join_path_parts,
+  sortFileByClaim,
+  swap_batch_number_in_file_name
+} from "./server_utils.mjs";
+
+import {app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell} from "electron";
+
+import {updateElectronApp, UpdateSourceType} from "update-electron-app";
+
+import electron_squirrel_startup from "electron-squirrel-startup";
+
+// import electron_reload from "electron-reload";
+
 logger.initialize()
 logger.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
 logger.errorHandler.startCatching()
@@ -15,7 +30,7 @@ console.log = logger.log;
 logger.debug("Starting up")
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
+if (electron_squirrel_startup) {
   app.quit();
 }
 
@@ -40,9 +55,9 @@ if(fs.existsSync(path.resolve(path.dirname(process.execPath), '..', 'update.exe'
 
 app.enableSandbox()
 
-require('electron-reload')(__dirname, {
-  hardResetMethod: 'exit'
-})
+// electron_reload(path.resolve("src"), {
+//   hardResetMethod: 'exit'
+// })
 
 let mainWindow;
 
@@ -55,10 +70,10 @@ const createWindow = () => {
     center: true,
     modal: false,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(path.resolve("src"), 'preload.js'),
       nodeIntegration: false
     },
-    icon: path.join(__dirname, 'icon.ico'),
+    icon: path.join(path.resolve("src"), 'icon.ico'),
   });
 
   mainWindow.setMenu(Menu.buildFromTemplate([
@@ -66,28 +81,23 @@ const createWindow = () => {
       label: 'Help',
       submenu: [
         { role: 'help', label: "Product Page", click: async () => {
-          const { shell } = require('electron');
           await shell.openExternal("https://www.guarantysupport.com/uds-splitter-utility/")
         } },
         { role: 'help', label: "Source Code", click: async () => {
-          const { shell } = require('electron');
           await shell.openExternal("https://github.com/GuarantySupportInc/uds-splitter")
         } },
         { role: 'help', label: "License", click: async () => {
-          const { shell } = require('electron');
           await shell.openExternal("https://github.com/GuarantySupportInc/uds-splitter/blob/master/LICENSE")
         } },
         { role: 'help', label: "Manual", click: async () => {
-          const { shell } = require('electron');
           await shell.openExternal("https://www.guarantysupport.com/uds-splitter-utility/#user-manual")
         } },
-
       ]
     }
   ]))
 
   // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  mainWindow.loadFile(path.join(path.resolve("src"), 'index.html'));
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools();
@@ -166,12 +176,12 @@ ipcMain.on('submitted-form', (event, formData) => {
       contextIsolation: true,
       enableRemoteModule: false,
       nodeIntegration: false,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(path.resolve("src"), 'preload.js')
     },
-    icon: path.join(__dirname, 'icon.ico'),
+    icon: path.join(path.resolve("src"), 'icon.ico'),
   });
 
-  progressWindow.loadFile(path.join(__dirname, 'progress.html'));
+  progressWindow.loadFile(path.join(path.resolve("src"), 'progress.html'));
   logger.debug('Record type:', recordType);
   fs.readFile(formData["chosen-file"], 'utf-8', async (err, data) => {
     if (err) {
