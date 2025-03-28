@@ -96,3 +96,6 @@ out/
 
 *.txt
 *.zip
+/test/input_files/10969_FL01NC10_I_935-2
+*.pdf
+*.doc
