@@ -1,12 +1,9 @@
-'use strict';
-
-import logger from "electron-log/main.js";
 import path from "path";
 import fs from "fs";
 import {
   create_zip_files,
   createNewHeader,
-  createNewTrailer,
+  createNewTrailer, extract_uds_file_from_florida_zip,
   getClaimNumber,
   join_path_parts,
   sortFileByClaim,
@@ -21,13 +18,13 @@ import electron_squirrel_startup from "electron-squirrel-startup";
 
 // import electron_reload from "electron-reload";
 
-logger.initialize()
-logger.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
-logger.errorHandler.startCatching()
-logger.eventLogger.startLogging()
-console.log = logger.log;
+import defaultLogger from "electron-log/node.js";
 
-logger.debug("Starting up")
+// defaultLogger.errorHandler.startCatching()
+// defaultLogger.eventLogger.startLogging()
+console.log = defaultLogger.log;
+
+defaultLogger.debug("Starting up")
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (electron_squirrel_startup) {
@@ -50,10 +47,12 @@ if(fs.existsSync(path.resolve(path.dirname(process.execPath), '..', 'update.exe'
       }
   ); // additional configuration options available
 } else {
-  logger.debug("updateElectronApp() not called because we may be in a development environment.")
+  defaultLogger.debug("updateElectronApp() not called because we may be in a development environment.")
 }
-
 app.enableSandbox()
+// app.on('ready', (launchInfo) => {
+//   app.enableSandbox()
+// })
 
 // electron_reload(path.resolve("src"), {
 //   hardResetMethod: 'exit'
@@ -100,7 +99,7 @@ const createWindow = () => {
   mainWindow.loadFile(path.join(path.resolve("src"), 'index.html'));
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
@@ -133,7 +132,7 @@ app.on('window-all-closed', () => {
 // Error handling not working as expected
 // Handle uncaught exceptions globally in the main process
 // app.on('uncaughtException', (error) => {
-//   logger.error('Uncaught Exception:', error.message);
+//   defaultLogger.error('Uncaught Exception:', error.message);
 
 //   // Send the error to the renderer process
 //   if (mainWindow && mainWindow.webContents) {
@@ -146,18 +145,29 @@ app.on('window-all-closed', () => {
 // unhandled({
 //   showDialog: true, // This shows an error dialog automatically
 //   logger: (error) => {
-//       logger.error('Unhandled Error:', error);
+//       defaultLogger.error('Unhandled Error:', error);
 //       if (mainWindow && mainWindow.webContents) {
 //           mainWindow.webContents.send('backend-exception', error.message);
 //       }
 //   },
 // });
+export async function submitted_form(event, formData) {
+  defaultLogger.debug('Form data received:', formData);
 
-//main function on submission
-ipcMain.on('submitted-form', (event, formData) => {
-  logger.debug('Form data received:', formData);
-  const filePath = formData["chosen-file"];
-  const zip_file_path = formData["additional-chosen-file"]
+  // Is file a Florida ZIP?
+  if(formData["chosen-file"].match(/\d{5}_FL01[A-Za-z]{2}\d{2}_I_\d{3}/g)) {
+    // Extract UDS file from ZIP then process as normal
+    await extract_uds_file_from_florida_zip(formData["chosen-file"])
+    let extension = path.extname(formData["chosen-file"])
+    let extension_index = formData["chosen-file"].lastIndexOf(extension)
+
+    // Swap arguments to put TXT first and ZIP last
+    formData["additional-chosen-file"] = formData["chosen-file"]
+    formData["chosen-file"] = formData["chosen-file"].substring(0, extension_index - extension.length) + ".txt"
+  }
+
+  let filePath = formData["chosen-file"];
+  let zip_file_path = formData["additional-chosen-file"]
   const fileName = path.basename(filePath);
   const recordType = fileName[5];
   const file_name = path.parse(filePath).name;
@@ -165,7 +175,7 @@ ipcMain.on('submitted-form', (event, formData) => {
   const outputDir = formData["output-directory"];
   const startingBatchNumber = formData["starting-batch-number"];
   let isProcessingCanceled = false;
-  logger.debug('File path received:', filePath);
+  defaultLogger.debug('File path received:', filePath);
   const progressWindow = new BrowserWindow({
     width: 400,
     height: 250,
@@ -181,18 +191,19 @@ ipcMain.on('submitted-form', (event, formData) => {
     icon: path.join(path.resolve("src"), 'icon.ico'),
   });
 
-  progressWindow.loadFile(path.join(path.resolve("src"), 'progress.html'));
-  logger.debug('Record type:', recordType);
+  await progressWindow.loadFile(path.join(path.resolve("src"), 'progress.html'));
+  defaultLogger.debug('Record type:', recordType);
+
   fs.readFile(formData["chosen-file"], 'utf-8', async (err, data) => {
     if (err) {
-      logger.error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
+      defaultLogger.error(`Error reading file ${formData["chosen-file"]}: ${err.message}`);
       event.sender.send('backend-exception', err + '\n Please contact support@guarantysupportinc.com with this exception');
     }
-    logger.info('File read successfully.');
+    defaultLogger.info('File read successfully.');
     const lines = data.split('\r\n');
 
     if (lines.length === 0 || !lines[0].includes("HEADER")) {
-      logger.error("Not a valid UDS file: HEADER not found in the first line.");
+      defaultLogger.error("Not a valid UDS file: HEADER not found in the first line.");
       event.sender.send('backend-exception', 'Not a valid UDS file: HEADER not found in the first line.');
       // I believe this only returns the async function, not the whole function... hence why 'End' still prints
       return;
@@ -210,14 +221,14 @@ ipcMain.on('submitted-form', (event, formData) => {
     const numberOfLinesInFile = lines.length;
     const linesPerFile = Math.ceil(numberOfLinesInFile / numberOfFiles);
 
-    // if for whatever reason the contents are proper UDS but the name of the file is incorrect UDS, then this should catch it... 
+    // if for whatever reason the contents are proper UDS but the name of the file is incorrect UDS, then this should catch it...
     // I suppose we could also try to pull the record type from the header? .. but that gets us into trouble based upon the zip needing to go with I Recs..
     let result
     try{
       result = sortFileByClaim(lines, recordType);
     }
     catch(err){
-      logger.error(`Error sorting file by claim: ${err.message}`);
+      defaultLogger.error(`Error sorting file by claim: ${err.message}`);
       event.sender.send('backend-exception', err)
       return;
     }
@@ -266,13 +277,13 @@ ipcMain.on('submitted-form', (event, formData) => {
 
       let progress = Math.round(((i + linesPerFile) / numberOfLinesInFile) * 100);  //progress is kinda difficult to calc with this method since we're not using two loops.. this is basically just saying when a file is done.. maybe can keep track of chunk len outside the loop
       progressWindow.webContents.send('progress-update', progress);
-      logger.debug(`Writing file ${new_file_path}...`);
+      defaultLogger.debug(`Writing file ${new_file_path}...`);
       fs.writeFile(new_file_path, fileContent, (writeErr) => {
         if (writeErr) {
           throw new Error(`There was an error writing to ${new_file_path}: ${writeErr.message}`)
           event.sender.send('backend-exception', writeErr + '\n Please contact support@guarantysupportinc.com with this exception');
         } else {
-          logger.debug(`File ${new_file_path} written successfully.`);
+          defaultLogger.debug(`File ${new_file_path} written successfully.`);
         }
       });
 
@@ -283,9 +294,9 @@ ipcMain.on('submitted-form', (event, formData) => {
     }
 
     if (recordType.toLowerCase() === 'i') {
-      create_zip_files(zip_file_path, new_uds_files, (file_name) => { console.info(`Created ${file_name}`) }).catch(result => {
+      await create_zip_files(zip_file_path, new_uds_files, (file_name) => { console.info(`Created ${file_name}`) }).catch(result => {
         // Do something with the error message. Maybe a popup?
-        logger.error(result.message)
+        defaultLogger.error(result.message)
         event.sender.send('backend-exception', result.message + '\n Please contact support@guarantysupportinc.com with this exception');
       })
     }
@@ -296,69 +307,69 @@ ipcMain.on('submitted-form', (event, formData) => {
     } else {
       event.sender.send('form-submitted', 'Form data and file processed successfully!');
       progressWindow.webContents.send('progress-done', 'Form data and file processed successfully!');
-      
+
       //opening the folder where the files are written to, if the user decides
       if (formData['open-folder']) {
         shell.openPath(outputDir).then(() => {
-          logger.log('Folder opened successfully');
+          defaultLogger.log('Folder opened successfully');
         }).catch((err) => {
-          logger.error('Error opening folder:', err);
+          defaultLogger.error('Error opening folder:', err);
         });
       }
     }
   });
-  logger.debug('End')
-});
-
-ipcMain.on('open-uds-file-dialog', (event) => {
+  defaultLogger.debug('End')
+}
+export function open_uds_file_dialog(event) {
   const result = dialog.showOpenDialogSync(mainWindow,{
-      properties: ['openFile'],
-      filters: [
-        { name: 'Text Files', extensions: ['txt', 'text'] },
-      ],
+    properties: ['openFile'],
+    filters: [
+      { name: 'Text Files', extensions: ['txt', 'text', "zip"] },
+    ],
   });
 
   if (result && result.length > 0) {
-      event.sender.send('selected-file', result[0]);
+    event.sender.send('selected-file', result[0]);
   } else {
-      event.sender.send('selected-file', 'canceled');
+    event.sender.send('selected-file', 'canceled');
   }
-});
-
-//choose output dir
-ipcMain.on('open-directory-dialog', (event) => {
+}
+export function open_directory_dialog(event) {
   const result = dialog.showOpenDialogSync(mainWindow, {
-      properties: ['openDirectory'],
+    properties: ['openDirectory'],
   });
 
   if (result && result.length > 0) {
-      event.sender.send('selected-directory', result[0]);
+    event.sender.send('selected-directory', result[0]);
   } else {
-      event.sender.send('selected-directory', 'canceled');
+    event.sender.send('selected-directory', 'canceled');
   }
-});
-
-//choose zip file
-ipcMain.on('open-zip-file-dialog', (event) => {
+}
+export function open_zip_file_dialog(event) {
   const result = dialog.showOpenDialogSync(mainWindow, {
-      properties: ['openFile'],
-      filters: [
-        { name: 'Zip Files', extensions: ['zip'] },
-      ],
+    properties: ['openFile'],
+    filters: [
+      { name: 'Zip Files', extensions: ['zip'] },
+    ],
   });
 
   if (result && result.length > 0) {
-      event.sender.send('selected-zip-file', result[0]);
+    event.sender.send('selected-zip-file', result[0]);
   } else {
-      event.sender.send('selected-zip-file', 'canceled');
+    event.sender.send('selected-zip-file', 'canceled');
   }
-});
-
-ipcMain.on("get-app-version", (event) => {
+}
+export function get_app_version(event) {
   event.returnValue = app.getVersion();
-});
-
-ipcMain.on('cancel-processing', (event) => {
+}
+export function cancel_processing(event) {
   //isProcessingCanceled = true;
-  logger.debug('Processing canceled by the user.');
-});
+  defaultLogger.debug('Processing canceled by the user.');
+}
+
+ipcMain.on('submitted-form', submitted_form);
+ipcMain.on('open-uds-file-dialog', open_uds_file_dialog);
+ipcMain.on('open-directory-dialog', open_directory_dialog);
+ipcMain.on('open-zip-file-dialog', open_zip_file_dialog);
+ipcMain.on("get-app-version", get_app_version);
+ipcMain.on('cancel-processing', cancel_processing);

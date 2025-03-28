@@ -1,6 +1,4 @@
-'use strict';
-
-function convert_form_data_to_dict(formData) {
+const convert_form_data_to_dict = function (formData) {
     let data = {}
     formData.forEach((value, key) => {
         data[key] = value
@@ -8,7 +6,7 @@ function convert_form_data_to_dict(formData) {
     return data
 }
 
-function file_sep(file_name) {
+const file_sep = function (file_name) {
     let starts_with_volume_letter = /^[A-Za-z]:\\/
     let starts_with_slash = /^\//
 
@@ -27,7 +25,7 @@ function file_sep(file_name) {
     }
 }
 
-function get_directory_from_path(file_path) {
+const get_directory_from_path = function (file_path) {
     if(file_sep(file_path) === "\\"){
         return file_path.substring(0, file_path.lastIndexOf('\\'));
     } else {
@@ -35,18 +33,14 @@ function get_directory_from_path(file_path) {
     }
 }
 
-function is_null_or_empty(value) {
+const is_null_or_empty = function (value) {
     return value == null || String(value).trim() === ""
 }
 
-function padDigits(number, digits) {
+const padDigits = function (number, digits) {
     return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
 }
 
-export {
-    convert_form_data_to_dict,
-    file_sep,
-    get_directory_from_path,
-    is_null_or_empty,
-    padDigits
+exports = {
+    file_sep, get_directory_from_path, is_null_or_empty, padDigits, convert_form_data_to_dict
 }

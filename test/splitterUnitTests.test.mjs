@@ -9,7 +9,18 @@ import {
     trim,
     wait_for_zip_to_populate
 } from "../src/server_utils.mjs";
-import * as local_utils from "../src/local_utils.mjs";
+import * as local_utils from "../src/local_utils.cjs";
+import { submitted_form } from "../src/index.mjs";
+
+export class CustomEvent {
+    constructor() {
+    }
+    reply(channel, ...args) {
+        console.log(`reply mocked: ${channel}, ${args}`);
+    }
+
+    sender = { send: function (channel, ...args) { console.log(`send mocked: ${channel}, ${args}`); } }
+}
 
 describe('createNewTrailer', function () {
     it('should create a new trailer for record type A correctly', function () {
@@ -616,38 +627,40 @@ describe('local_utils.padDigits', function () {
 
 
 describe('create_zip_files', function() {
-    it('should process and parse the zip given the UDS file paths', async function() {
-        const test_dir = path.resolve("test")
-        const original_zip_file_path = path.join(test_dir, './input_files/55555IIN01IN9900120240805.zip');
-        const final_uds_file_paths = [
-            path.join(test_dir, './input_files/55555IIN01IN9900120240805-1.txt')
-        ];
-        const new_zip_file_path = path.join(test_dir, './input_files/55555IIN01IN9900120240805-1.zip');
-        await fs.rm(new_zip_file_path, {force: true}, () => {});
-
-        await create_zip_files(original_zip_file_path, final_uds_file_paths, async (file_name) => {
-            expect(fs.existsSync(file_name)).to.equal(true)
-
-            const original_zip_stream = fs.createReadStream(new_zip_file_path)
-            let original_zip = new ZipReader(ReadableStream.from(original_zip_stream))
-            const original_zip_entries = await original_zip.getEntries()
-            fs.rm(new_zip_file_path, {force: true}, () => {});
-
-            expect(original_zip_entries.length).to.equal(2);
-        });
-    });
-
-    // it('should be able to process a zip over 2GB', async function() {
-    //     const formData = {
-    //         "chosen-file": path.resolve(__dirname, './input_files/24678IDE01KS1050920240730.txt'),
-    //         "additional-chosen-file": path.resolve(__dirname, './input_files/24678IDE01KS1050920240730.zip'),
-    //         "number-of-files": 1,
-    //         "output-directory": path.resolve(__dirname),
-    //         "starting-batch-number": 509,
-    //     }
+    // it('should process and parse the zip given the UDS file paths', async function() {
+    //     const test_dir = path.resolve("test")
+    //     const original_zip_file_path = path.join(test_dir, './input_files/55555IIN01IN9900120240805.zip');
+    //     const final_uds_file_paths = [
+    //         path.join(test_dir, './input_files/55555IIN01IN9900120240805-1.txt')
+    //     ];
+    //     const new_zip_file_path = path.join(test_dir, './input_files/55555IIN01IN9900120240805-1.zip');
+    //     await fs.rm(new_zip_file_path, {force: true}, () => {});
     //
-    //     app.ipcRenderer.send("submitted-form", formData)
+    //     await create_zip_files(original_zip_file_path, final_uds_file_paths, async (file_name) => {
+    //         expect(fs.existsSync(file_name)).to.equal(true)
+    //
+    //         const original_zip_stream = fs.createReadStream(new_zip_file_path)
+    //         let original_zip = new ZipReader(ReadableStream.from(original_zip_stream))
+    //         const original_zip_entries = await original_zip.getEntries()
+    //         fs.rm(new_zip_file_path, {force: true}, () => {});
+    //
+    //         expect(original_zip_entries.length).to.equal(2);
+    //     });
     // });
+
+    it('should be able to process a zip over 2GB', async function() {
+        const test_dir = path.resolve("test")
+
+        const formData = {
+            "chosen-file": path.join(test_dir, './input_files/10969_FL01NC10_I_935-2.zip'),
+            "additional-chosen-file": "",
+            "number-of-files": 1,
+            "output-directory": path.join(test_dir, "output_files"),
+            "starting-batch-number": 509,
+        }
+
+        await submitted_form(new CustomEvent(), formData);
+    });
 
     // apparently since this is async, it needs to use 'chai-as-promised' but I'm not going to bother with another installed library for one test that should be negative
     // it('should throw an error if the expected path in the UDS is not present in the zip', async function() {

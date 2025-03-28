@@ -43,7 +43,7 @@
   "repository": "github:GuarantySupportInc/uds-splitter",
   "license": "MIT",
   "dependencies": {
-    "@zip.js/zip.js": "^2.6.40",
+    "@zip.js/zip.js": "file:../zip.js",
     "electron-log": "^5.1.7",
     "electron-reload": "^2.0.0-alpha.1",
     "electron-squirrel-startup": "^1.0.1",

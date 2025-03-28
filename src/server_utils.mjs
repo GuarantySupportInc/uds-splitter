@@ -1,14 +1,16 @@
-'use strict';
-
-
 // START OF FILE MUST LOOK LIKE A UDS FILE
 // const AdmZip = require('adm-zip');
-import logger from "electron-log/main.js";
+import defaultLogger from "electron-log/node.js";
+
+defaultLogger.errorHandler.startCatching()
+defaultLogger.eventLogger.startLogging()
+console.log = defaultLogger.log;
+
 
 const UDS_FILE_REGEX = /^(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
 // const zip = require("@zip.js/zip.js/index")
 // import * as zip from "@zip.js/zip.js/index";
-import { ZipWriter, ZipReader, BlobWriter } from "@zip.js/zip.js"
+import { ZipWriter, ZipReader, BlobWriter, ZipReaderStream, ZipWriterStream, BlobReader } from "@zip.js/zip.js"
 import events from "events";
 import ReadLine from "readline";
 import path from "path";
@@ -263,28 +265,40 @@ async function create_zip_files(original_zip_file, final_uds_file_paths, callbac
       zip_map[path] = new ZipWriter(new BlobWriter())
     }
 
+    try {
+      for await (const line of reader) {
+        if (line.startsWith("HEADER") || line.startsWith("TRAILER"))
+          continue
 
-    for await (const line of reader) {
-      if(line.startsWith("HEADER") || line.startsWith("TRAILER"))
-        continue
+        if (line === "")
+          continue
 
-      if(line === "")
-        continue
-
-      let document_path = line.substring(702, 958).trim() // Assuming perfect UDS
-      let file_name = line.substring(958, 1214).trim()
-      let full_path = "\\" + join_path_parts(document_path, file_name).replaceAll("/", "\\")
-      if (!(full_path in file_map)) {
-        file_map[full_path] = new Set([path])
-      } else {
-        file_map[full_path].add(path)
+        let document_path = line.substring(702, 958).trim() // Assuming perfect UDS
+        let file_name = line.substring(958, 1214).trim()
+        let full_path = "\\" + join_path_parts(document_path, file_name).replaceAll("/", "\\")
+        if (!(full_path in file_map)) {
+          file_map[full_path] = new Set([path])
+        } else {
+          file_map[full_path].add(path)
+        }
       }
+    } catch (e) {
+      console.error(e)
     }
   }
 
   // Determine where this entry to should go in the resulting uds files
-  const existing_entries = await existing_zip.getEntries()
-  for(const entry of existing_entries) {
+  let existing_entries;
+  try {
+    existing_entries = await existing_zip.getEntries()
+  } catch(e) {
+    console.error(e)
+  }
+  for await (const entry of existing_entries.getEntriesGenerator({
+    onprogress(progress, total, entry) {
+      defaultLogger.info(`On ${progress}/${total}: ${entry.filename}`)
+
+    }})) {
     let entry_name = entry.filename;
 
     // Zip Slip prevention https://security.snyk.io/research/zip-slip-vulnerability
@@ -304,7 +318,7 @@ async function create_zip_files(original_zip_file, final_uds_file_paths, callbac
     if(!(uds_version_of_entry in file_map))
       throw new Error(`${uds_version_of_entry} is not in an a resulting UDS file. Are you sure the ZIP goes with the UDS file?`)
 
-    logger.debug(`Processing ZIP entry: ${entry_name}`)
+    defaultLogger.debug(`Processing ZIP entry: ${entry_name}`)
 
     // Basically one Full Path could belong to multiple UDS files, so we store the list of UDS files for each full path
     // then we get the resulting ZIP for each eventual UDS file. Thus we hope that zip.readFileAsync() is only called
@@ -338,7 +352,120 @@ async function create_zip_files(original_zip_file, final_uds_file_paths, callbac
       writeable.close(() => callback(new_zip_name))
     })
   }
+}
 
+class ZipReaderStreamModified extends ZipReaderStream {
+
+  constructor(expected_size, options = {}) {
+    super(options);
+    this.readable.size = expected_size;
+    this.readable.readUint8Array = this.readUint8Array
+  }
+
+  async readUint8Array(offset, length) {
+    const reader = this;
+    const offsetEnd = offset + length;
+    const blob = offset || offsetEnd < reader.size ? reader.blob.slice(offset, offsetEnd) : reader.blob;
+    let arrayBuffer = await blob.arrayBuffer();
+    if (arrayBuffer.byteLength > length) {
+      arrayBuffer = arrayBuffer.slice(offset, offsetEnd);
+    }
+    return new Uint8Array(arrayBuffer);
+  }
+}
+
+async function extract_uds_file_from_florida_zip(florida_zip_file) {
+  // Unhandled rejection RangeError [ERR_FS_FILE_TOO_LARGE]: File size (3273925280) is greater than 2 GiB
+  // https://github.com/gildas-lormeau/zip.js/discussions/481
+  // const original_zip_stream = fs.readFileSync(florida_zip_file)
+  // let existing_zip = new ZipReader(new Blob([Buffer.from(original_zip_stream)], { type: "application/zip" }))
+
+  // Unhandled rejection RangeError: Array buffer allocation failed
+  // const original_zip_stream = fs.createReadStream(florida_zip_file)
+  // let existing_zip = new ZipReader(ReadableStream.from(original_zip_stream))
+
+  //  Unhandled rejection RangeError: Array buffer allocation failed
+  const file_stream = fs.createReadStream(florida_zip_file)
+  const zip_reader = new ZipReaderStream({extractPrependedData: false, extractAppendedData: false})
+  const zip_writer = zip_reader.writable.getWriter()
+  for await (const chunk of file_stream) {
+    await zip_writer.write(chunk)
+  }
+
+  // const blob_writer = new BlobWriter()
+  // const blob_writer_writer = blob_writer.writable.getWriter()
+  // for await (const chunk of file_stream) {
+  //   await blob_writer_writer.write(chunk)
+  // }
+  // const data = await blob_writer.getData()
+
+  file_stream.close()
+
+  // zip_stream.reader.size = file_stream.bytesRead
+      // const entries_stream = zip_stream.readable.getReader()
+
+  file_stream.close()
+  await blob_writer_writer.close()
+
+  let matches = florida_zip_file.match(/(\d{5})_(FL01)([A-Za-z]{2}\d{2})_(I)_(\d{3})/)
+
+  let naic = matches[1]
+  let from_state = matches[2]
+  let to_state = matches[3]
+  let record_type = matches[4]
+  let batch_number = matches[5]
+  let expected_file_name = `${naic}${record_type}${from_state}${to_state}${batch_number}\\d{8}.TXT`
+
+  try {
+    for await (const entry of zip_reader.getEntriesGenerator()) {
+      if (entry.directory) return;
+
+      let matches = entry.filename.match(expected_file_name)
+
+      if (!matches) return;
+
+      const memory_stream = new BlobWriter()
+
+      await entry.getData(memory_stream)
+
+      const memory_stream_data = await memory_stream.getData()
+      fs.writeFile(path.join(path.dirname(florida_zip_file), entry.filename), memory_stream_data.text(), () => {
+        defaultLogger.info(`Successfully wrote ${path.join(path.dirname(florida_zip_file), entry.filename)}`)
+      })
+    }
+
+    let entry_obj;
+    const reader = zip_reader.getReader()
+
+    //
+    // GOAL: https://github.com/gildas-lormeau/zip.js/blob/be8a40fccb32dc320b3cf56a5faf9a609e60a6cb/lib/core/zip-reader.js
+    // Debug: C:\Users\njennings\Documents\GitHub\uds-splitter\node_modules\@zip.js\zip.js\lib\core\zip-reader.js
+    // with console.log statements and try to get the inner
+
+
+    // do {
+    //   let entry_obj = await reader.read()
+    //   let entry = entry_obj.value
+    //   if (entry_obj.directory) return;
+    //
+    //   let matches = entry.filename.match(expected_file_name)
+    //
+    //   if (!matches) return;
+    //
+    //   const memory_stream = new BlobWriter()
+    //
+    //   await entry.getData(memory_stream)
+    //
+    //   const memory_stream_data = await memory_stream.getData()
+    //   fs.writeFile(path.join(path.dirname(florida_zip_file), entry.filename), memory_stream_data.text(), () => {
+    //     defaultLogger.info(`Successfully wrote ${path.join(path.dirname(florida_zip_file), entry.filename)}`)
+    //   })
+    // } while(entry_obj)
+  }
+  catch(e) {
+    defaultLogger.error(e)
+    throw e
+  }
 }
 
 export {
@@ -354,5 +481,6 @@ export {
   create_zip_files,
   trim,
   wait_for_zip_to_populate,
-  convertFloatToUDSCurrency
+  convertFloatToUDSCurrency,
+  extract_uds_file_from_florida_zip
 };

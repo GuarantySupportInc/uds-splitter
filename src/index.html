@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="index.css"/>
 </head>
 <body>
-<script src="local_utils.mjs"></script>
+<script src="local_utils.cjs"></script>
 <div id="page-container">
     <div id="content-wrap">
         <div class="title-container">
@@ -87,11 +87,11 @@
                 return
             }
 
-            const uds_file_regex = /(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
-            let groups = chosenFile.match(uds_file_regex)
+            let uds_file_groups = chosenFile.match(/(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/)
+            let flliq_file_groups = chosenFile.match(/(\d{5})_(FL01)([A-Za-z]{2}\d{2})_(I)_(\d{3})/)
 
-            if(!groups) {
-                alert(`Selected File ${chosenFile} does not match UDS file format. Please select a valid UDS file.`)
+            if(!uds_file_groups && !flliq_file_groups) {
+                alert(`Selected File ${chosenFile} does not match UDS file format. Please select a valid UDS or ZIP file.`)
                 return
             }
 
@@ -141,17 +141,25 @@
                 // Provide Default Batch Number on file select
                 // ----------------------------------------------------------
                 const uds_file_regex = /(\d{5})([ABCDEFGIM])([A-Z]{2}\d{2})([A-Z]{2}\d{2})(\d{3})/
-                let groups = filePath.match(uds_file_regex)
+                let uds_file_groups = filePath.match(uds_file_regex)
+                let flliq_file_groups = filePath.match(/(\d{5})_(FL01)([A-Za-z]{2}\d{2})_(I)_(\d{3})/)
 
-                if(!groups) throw new Error(`Selected File ${filePath} does not match UDS file format.`)
+                if(!uds_file_groups && !flliq_file_groups) throw new Error(`Selected File ${filePath} does not match UDS file format.`)
 
-                let batch_number = groups[5]
-                let record_type = groups[2]
+                let batch_number, record_type;
+                if(uds_file_groups) {
+                    batch_number = uds_file_groups[5]
+                    record_type = uds_file_groups[2]
+                }
+                else {
+                    batch_number = flliq_file_groups[5]
+                    record_type = flliq_file_groups[4]
+                }
 
                 document.getElementById('starting-batch-number').value = batch_number
 
                 // Show Additional File Section
-                if(record_type.toLowerCase() === "i") {
+                if(record_type.toLowerCase() === "i" && !flliq_file_groups) {
                     document.getElementById("zip-section").style.display = "initial"
                 } else {
                     document.getElementById("zip-section").style.display = "none"
@@ -159,7 +167,7 @@
                     document.getElementById('choose-additional-file').value = ""
                 }
 
-                console.debug(`Found UDS match: ${groups}`)
+                console.debug(`Found UDS match: ${uds_file_groups}`)
                 console.debug(`Successfully selected ${filePath}`)
             }
         });
